@@ -1,462 +1,575 @@
+extern crate approx;
+extern crate nalgebra as na;
+extern crate ulid;
+use std::f32::consts::PI;
+use std::iter::FromIterator;
+
+use na::{Matrix4, Vector, Vector4};
+use raytracer::{
+    camera::Camera,
+    canvas::Canvas,
+    color::Color,
+    cone::Cone,
+    cube::Cube,
+    cylinder::Cylinder,
+    intersection::*,
+    material::Material,
+    matrix::CGMatrix,
+    pattern::{Checker, Pattern, Ring, Stripe},
+    plane::Plane,
+    pointlight::PointLight,
+    ppm::Ppm,
+    ray::Ray,
+    shape::Shape,
+    sphere::Sphere,
+    tuple::TupleOperation,
+    world::World,
+};
 fn main() {
-    println!("cargo test will generate images");
+    ch5();
+    ch6();
+    ch7();
+    ch9();
+    ch10();
+    ch11();
+    ch12();
+    ch13_cylinder();
+    ch13_cylinder();
 }
 
-#[cfg(test)]
-mod tests {
-    extern crate approx;
-    extern crate nalgebra as na;
-    extern crate ulid;
-    use std::f32::consts::PI;
-    use std::iter::FromIterator;
+fn ch5() {
+    let ray_origin_z = -5.0;
+    let wall_z = 10.0;
+    let wall_size = 7.0;
+    let canvas_pixels = 100.0;
+    let pixel_size = wall_size / canvas_pixels;
+    let half = wall_size / 2.0;
 
-    use na::{Matrix4, Vector, Vector4};
-    use raytracer::{
-        camera::Camera,
-        canvas::Canvas,
-        color::Color,
-        cone::Cone,
-        cube::Cube,
-        cylinder::Cylinder,
-        intersection::*,
-        material::Material,
-        matrix::CGMatrix,
-        pattern::{Checker, Pattern, Ring, Stripe},
-        plane::Plane,
-        pointlight::PointLight,
-        ppm::Ppm,
-        ray::Ray,
-        shape::Shape,
-        sphere::Sphere,
-        tuple::TupleOperation,
-        world::World,
-    };
+    let ray = Ray::from_tuple((0.0, 0.0, ray_origin_z), (0.0, 0.0, wall_z));
+    let sphere = Sphere::new(Some(Matrix4::translation(0.1, 0.1, 0.0)), None, None, None);
+    let shape = Shape::Sphere(sphere);
 
-    #[test]
-    fn ch5() {
-        let ray_origin_z = -5.0;
-        let wall_z = 10.0;
-        let wall_size = 7.0;
-        let canvas_pixels = 100.0;
-        let pixel_size = wall_size / canvas_pixels;
-        let half = wall_size / 2.0;
+    let mut pixels: Vec<Color> = vec![];
 
-        let ray = Ray::from_tuple((0.0, 0.0, ray_origin_z), (0.0, 0.0, wall_z));
-        let sphere = Sphere::new(Some(Matrix4::translation(0.1, 0.1, 0.0)), None, None, None);
-        let shape = Shape::Sphere(sphere);
-
-        let mut pixels: Vec<Color> = vec![];
-
-        for y in 0..canvas_pixels as i32 {
-            let world_y = half - pixel_size * (y as f32);
-            for x in 0..canvas_pixels as i32 {
-                let world_x = -half + pixel_size * (x as f32);
-                let position = Vector4::point(world_x, world_y, wall_z);
-                let direction = Vector::normalize(&(position - ray.origin));
-                let r = Ray::new(ray.origin, direction);
-                let intersections = shape.intersect(&r);
-                let hit = intersections.hit();
-                if hit.is_some() {
-                    let red = Color::rgb(1.0, 0.0, 0.0);
-                    pixels.push(red);
-                } else {
-                    let black = Color::rgb(0.0, 0.0, 0.0);
-                    pixels.push(black);
-                }
+    for y in 0..canvas_pixels as i32 {
+        let world_y = half - pixel_size * (y as f32);
+        for x in 0..canvas_pixels as i32 {
+            let world_x = -half + pixel_size * (x as f32);
+            let position = Vector4::point(world_x, world_y, wall_z);
+            let direction = Vector::normalize(&(position - ray.origin));
+            let r = Ray::new(ray.origin, direction);
+            let intersections = shape.intersect(&r);
+            let hit = intersections.hit();
+            if hit.is_some() {
+                let red = Color::rgb(1.0, 0.0, 0.0);
+                pixels.push(red);
+            } else {
+                let black = Color::rgb(0.0, 0.0, 0.0);
+                pixels.push(black);
             }
         }
-        let ppm = Ppm::new(canvas_pixels as usize, canvas_pixels as usize, &pixels);
-        let result = ppm.out("ch5");
-        assert_eq!(result.is_ok(), true)
     }
+    let ppm = Ppm::new(canvas_pixels as usize, canvas_pixels as usize, &pixels);
+    let result = ppm.out("ch5");
+    println!("Render /ppms/{:?}.ppm", result);
+}
 
-    #[test]
-    fn ch6() {
-        let material = Material::new(
-            Some(Color::rgb(1.0, 0.2, 1.0)),
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        );
-        let shape = Shape::Sphere(Sphere::new(
-            Some(Matrix4::translation(0.1, 0.1, 0.0)),
-            Some(material),
-            None,
-            None,
-        ));
-        let canvas = Canvas::render_single_shape(shape, 300);
-        let ppm = Ppm::from_canvas(canvas);
-        let result = ppm.out("ch6");
-        assert_eq!(result.unwrap(), "ppms/ch6.ppm");
-    }
-    #[test]
-    fn ch7() {
-        let floor_material = Material::new(
-            Some(Color::rgb(1.0, 0.9, 0.9)),
-            None,
-            None,
-            Some(0.0),
-            None,
-            None,
-            None,
-            None,
-            None,
-        );
+fn ch6() {
+    let material = Material::new(
+        Some(Color::rgb(1.0, 0.2, 1.0)),
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    );
+    let shape = Shape::Sphere(Sphere::new(
+        Some(Matrix4::translation(0.1, 0.1, 0.0)),
+        Some(material),
+        None,
+        None,
+    ));
+    let canvas = Canvas::render_single_shape(shape, 300);
+    let ppm = Ppm::from_canvas(canvas);
+    let result = ppm.out("ch6");
+    println!("Render /ppms/{:?}.ppm", result);
+}
+fn ch7() {
+    let floor_material = Material::new(
+        Some(Color::rgb(1.0, 0.9, 0.9)),
+        None,
+        None,
+        Some(0.0),
+        None,
+        None,
+        None,
+        None,
+        None,
+    );
 
-        let floor = Shape::Sphere(Sphere::new(
-            Some(Matrix4::scaling(10.0, 0.01, 10.0)),
-            Some(floor_material.clone()),
-            None,
-            None,
-        ));
-        let left_wall = Shape::Sphere(Sphere::new(
-            Some(
-                Matrix4::translation(0.0, 0.0, 5.0)
-                    * Matrix4::rotation_y(-PI / 4.0)
-                    * Matrix4::rotation_x(PI / 2.0)
-                    * Matrix4::scaling(10.0, 0.01, 10.0),
-            ),
-            Some(floor_material.clone()),
-            None,
-            None,
-        ));
-        let right_wall = Shape::Sphere(Sphere::new(
-            Some(
-                Matrix4::translation(0.0, 0.0, 5.0)
-                    * Matrix4::rotation_y(PI / 4.0)
-                    * Matrix4::rotation_x(PI / 2.0)
-                    * Matrix4::scaling(10.0, 0.01, 10.0),
-            ),
-            Some(floor_material.clone()),
-            None,
-            None,
-        ));
+    let floor = Shape::Sphere(Sphere::new(
+        Some(Matrix4::scaling(10.0, 0.01, 10.0)),
+        Some(floor_material.clone()),
+        None,
+        None,
+    ));
+    let left_wall = Shape::Sphere(Sphere::new(
+        Some(
+            Matrix4::translation(0.0, 0.0, 5.0)
+                * Matrix4::rotation_y(-PI / 4.0)
+                * Matrix4::rotation_x(PI / 2.0)
+                * Matrix4::scaling(10.0, 0.01, 10.0),
+        ),
+        Some(floor_material.clone()),
+        None,
+        None,
+    ));
+    let right_wall = Shape::Sphere(Sphere::new(
+        Some(
+            Matrix4::translation(0.0, 0.0, 5.0)
+                * Matrix4::rotation_y(PI / 4.0)
+                * Matrix4::rotation_x(PI / 2.0)
+                * Matrix4::scaling(10.0, 0.01, 10.0),
+        ),
+        Some(floor_material.clone()),
+        None,
+        None,
+    ));
 
-        let middle_sphere = Shape::Sphere(Sphere::new(
-            Some(Matrix4::translation(-0.5, 1.0, 0.5)),
-            Some(Material::new(
-                Some(Color::rgb(1.0, 0.2, 0.2)),
-                Some(0.7),
-                Some(0.3),
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-            )),
-            None,
-            None,
-        ));
-        let right_sphere = Shape::Sphere(Sphere::new(
-            Some(Matrix4::translation(1.5, 0.5, -0.5) * Matrix4::scaling(0.5, 0.5, 0.5)),
-            Some(Material::new(
-                Some(Color::rgb(0.3, 0.4, 1.0)),
-                Some(0.7),
-                Some(0.3),
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-            )),
-            None,
-            None,
-        ));
-
-        let world = World::new(
-            Some(PointLight::new(
-                Vector4::point(-10.0, 10.0, -10.0),
-                Color::rgb(1.0, 1.0, 1.0),
-            )),
-            vec![floor, left_wall, right_wall, middle_sphere, right_sphere],
-        );
-
-        let camera = Camera::new(
-            200.0,
-            150.0,
-            PI / 3.0,
-            Vector4::point(0.0, 1.5, -5.0).view_transformation(
-                &Vector4::point(0.0, 1.0, 0.0),
-                &Vector4::vector(0.0, 1.0, 0.0),
-            ),
-        );
-
-        let canvas = camera.render(&world);
-
-        let ppm = canvas.to_ppm();
-        let result = ppm.out("ch7");
-        assert_eq!(result.unwrap(), "ppms/ch7.ppm");
-    }
-    #[test]
-    fn ch9() {
-        let floor_material = Material::new(
-            Some(Color::rgb(1.0, 0.9, 0.9)),
-            None,
-            None,
-            Some(0.0),
-            None,
-            None,
-            None,
-            None,
-            None,
-        );
-
-        let floor = Shape::Plane(Plane::new(
-            Some(Matrix4::scaling(10.0, 0.01, 10.0)),
-            Some(floor_material.clone()),
-            None,
-        ));
-
-        let middle_sphere = Shape::Sphere(Sphere::new(
-            Some(Matrix4::translation(-0.5, 1.0, 0.5)),
-            Some(Material::new(
-                Some(Color::rgb(1.0, 0.2, 0.2)),
-                Some(0.7),
-                Some(0.3),
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-            )),
-            None,
-            None,
-        ));
-        let right_sphere = Shape::Sphere(Sphere::new(
-            Some(Matrix4::translation(1.5, 0.5, -0.5) * Matrix4::scaling(0.5, 0.5, 0.5)),
-            Some(Material::new(
-                Some(Color::rgb(0.3, 0.4, 1.0)),
-                Some(0.7),
-                Some(0.3),
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-            )),
-            None,
-            None,
-        ));
-
-        let world = World::new(
-            Some(PointLight::new(
-                Vector4::point(-10.0, 10.0, -10.0),
-                Color::rgb(1.0, 1.0, 1.0),
-            )),
-            vec![floor, middle_sphere, right_sphere],
-        );
-
-        let ratio = 1.0;
-        let camera = Camera::new(
-            200.0 * ratio,
-            150.0 * ratio,
-            PI / 3.0,
-            Vector4::point(0.0, 1.5, -5.0).view_transformation(
-                &Vector4::point(0.0, 1.0, 0.0),
-                &Vector4::vector(0.0, 1.0, 0.0),
-            ),
-        );
-
-        let canvas = camera.render(&world);
-
-        let ppm = canvas.to_ppm();
-        let result = ppm.out("ch9");
-        assert_eq!(result.unwrap(), "ppms/ch9.ppm");
-    }
-
-    #[test]
-    fn ch10() {
-        let floor_material = Material::new(
-            Some(Color::rgb(1.0, 0.9, 0.9)),
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            Some(Pattern::Checker(Checker::new(
-                (1.0, 1.0, 1.0),
-                (0.0, 0.0, 0.0),
-                Matrix4::<f32>::scaling(0.5, 0.5, 0.5),
-            ))),
-        );
-
-        let floor = Shape::Sphere(Sphere::new(
-            Some(Matrix4::scaling(10.0, 0.01, 10.0)),
-            Some(floor_material.clone()),
-            None,
-            None,
-        ));
-
-        let middle_sphere = Shape::Sphere(Sphere::new(
-            Some(Matrix4::translation(-0.5, 1.0, 0.5)),
-            Some(Material::new(
-                Some(Color::rgb(1.0, 0.2, 0.2)),
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-            )),
-            None,
-            None,
-        ));
-
-        let right_back_sphere = Shape::Sphere(Sphere::new(
-            Some(Matrix4::translation(1.7, 0.5, 2.5) * Matrix4::scaling(1.3, 1.3, 1.3)),
-            Some(Material::new(
-                Some(Color::rgb(0.3, 0.4, 1.0)),
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                Some(Pattern::Ring(Ring::new(
-                    (1.0, 0.0, 0.0),
-                    (1.0, 1.0, 1.0),
-                    Matrix4::<f32>::scaling(0.1, 0.1, 0.1),
-                ))),
-            )),
-            None,
-            None,
-        ));
-
-        let right_forward_sphere = Shape::Sphere(Sphere::new(
-            Some(Matrix4::translation(1.2, 0.5, -0.9) * Matrix4::scaling(0.7, 0.7, 0.7)),
-            Some(Material::new(
-                Some(Color::rgb(0.0, 0.5, 1.0)),
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                Some(Pattern::Stripe(Stripe::new(
-                    (0.0, 0.8, 0.8),
-                    (1.0, 1.0, 1.0),
-                    Matrix4::<f32>::scaling(0.2, 0.2, 0.2),
-                ))),
-            )),
-            None,
-            None,
-        ));
-
-        let world = World::new(
-            Some(PointLight::new(
-                Vector4::point(-10.0, 10.0, -10.0),
-                Color::rgb(1.0, 1.0, 1.0),
-            )),
-            vec![
-                floor,
-                middle_sphere,
-                right_forward_sphere,
-                right_back_sphere,
-            ],
-        );
-
-        let ratio = 2.0;
-
-        let camera = Camera::new(
-            200.0 * ratio,
-            150.0 * ratio,
-            PI / 3.0,
-            Vector4::point(0.0, 1.5, -5.0).view_transformation(
-                &Vector4::point(0.0, 1.0, 0.0),
-                &Vector4::vector(0.0, 1.0, 0.0),
-            ),
-        );
-
-        let canvas = camera.render(&world);
-
-        let ppm = canvas.to_ppm();
-        let result = ppm.out("ch10");
-        assert_eq!(result.unwrap(), "ppms/ch10.ppm");
-    }
-
-    #[test]
-    fn ch11() {
-        let floor_material = Material::new(
-            Some(Color::rgb(1.0, 0.9, 0.9)),
-            None,
-            None,
-            Some(0.0),
-            Some(0.0),
+    let middle_sphere = Shape::Sphere(Sphere::new(
+        Some(Matrix4::translation(-0.5, 1.0, 0.5)),
+        Some(Material::new(
+            Some(Color::rgb(1.0, 0.2, 0.2)),
+            Some(0.7),
             Some(0.3),
             None,
             None,
-            Some(Pattern::Checker(Checker::new(
+            None,
+            None,
+            None,
+            None,
+        )),
+        None,
+        None,
+    ));
+    let right_sphere = Shape::Sphere(Sphere::new(
+        Some(Matrix4::translation(1.5, 0.5, -0.5) * Matrix4::scaling(0.5, 0.5, 0.5)),
+        Some(Material::new(
+            Some(Color::rgb(0.3, 0.4, 1.0)),
+            Some(0.7),
+            Some(0.3),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )),
+        None,
+        None,
+    ));
+
+    let world = World::new(
+        Some(PointLight::new(
+            Vector4::point(-10.0, 10.0, -10.0),
+            Color::rgb(1.0, 1.0, 1.0),
+        )),
+        vec![floor, left_wall, right_wall, middle_sphere, right_sphere],
+    );
+
+    let camera = Camera::new(
+        200.0,
+        150.0,
+        PI / 3.0,
+        Vector4::point(0.0, 1.5, -5.0).view_transformation(
+            &Vector4::point(0.0, 1.0, 0.0),
+            &Vector4::vector(0.0, 1.0, 0.0),
+        ),
+    );
+
+    let canvas = camera.render(&world);
+
+    let ppm = canvas.to_ppm();
+    let result = ppm.out("ch7");
+    println!("Render /ppms/{:?}.ppm", result);
+}
+fn ch9() {
+    let floor_material = Material::new(
+        Some(Color::rgb(1.0, 0.9, 0.9)),
+        None,
+        None,
+        Some(0.0),
+        None,
+        None,
+        None,
+        None,
+        None,
+    );
+
+    let floor = Shape::Plane(Plane::new(
+        Some(Matrix4::scaling(10.0, 0.01, 10.0)),
+        Some(floor_material.clone()),
+        None,
+    ));
+
+    let middle_sphere = Shape::Sphere(Sphere::new(
+        Some(Matrix4::translation(-0.5, 1.0, 0.5)),
+        Some(Material::new(
+            Some(Color::rgb(1.0, 0.2, 0.2)),
+            Some(0.7),
+            Some(0.3),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )),
+        None,
+        None,
+    ));
+    let right_sphere = Shape::Sphere(Sphere::new(
+        Some(Matrix4::translation(1.5, 0.5, -0.5) * Matrix4::scaling(0.5, 0.5, 0.5)),
+        Some(Material::new(
+            Some(Color::rgb(0.3, 0.4, 1.0)),
+            Some(0.7),
+            Some(0.3),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )),
+        None,
+        None,
+    ));
+
+    let world = World::new(
+        Some(PointLight::new(
+            Vector4::point(-10.0, 10.0, -10.0),
+            Color::rgb(1.0, 1.0, 1.0),
+        )),
+        vec![floor, middle_sphere, right_sphere],
+    );
+
+    let ratio = 1.0;
+    let camera = Camera::new(
+        200.0 * ratio,
+        150.0 * ratio,
+        PI / 3.0,
+        Vector4::point(0.0, 1.5, -5.0).view_transformation(
+            &Vector4::point(0.0, 1.0, 0.0),
+            &Vector4::vector(0.0, 1.0, 0.0),
+        ),
+    );
+
+    let canvas = camera.render(&world);
+
+    let ppm = canvas.to_ppm();
+    let result = ppm.out("ch9");
+    println!("Render /ppms/{:?}.ppm", result);
+}
+
+fn ch10() {
+    let floor_material = Material::new(
+        Some(Color::rgb(1.0, 0.9, 0.9)),
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        Some(Pattern::Checker(Checker::new(
+            (1.0, 1.0, 1.0),
+            (0.0, 0.0, 0.0),
+            Matrix4::<f32>::scaling(0.5, 0.5, 0.5),
+        ))),
+    );
+
+    let floor = Shape::Sphere(Sphere::new(
+        Some(Matrix4::scaling(10.0, 0.01, 10.0)),
+        Some(floor_material.clone()),
+        None,
+        None,
+    ));
+
+    let middle_sphere = Shape::Sphere(Sphere::new(
+        Some(Matrix4::translation(-0.5, 1.0, 0.5)),
+        Some(Material::new(
+            Some(Color::rgb(1.0, 0.2, 0.2)),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )),
+        None,
+        None,
+    ));
+
+    let right_back_sphere = Shape::Sphere(Sphere::new(
+        Some(Matrix4::translation(1.7, 0.5, 2.5) * Matrix4::scaling(1.3, 1.3, 1.3)),
+        Some(Material::new(
+            Some(Color::rgb(0.3, 0.4, 1.0)),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            Some(Pattern::Ring(Ring::new(
+                (1.0, 0.0, 0.0),
                 (1.0, 1.0, 1.0),
-                (0.0, 0.0, 0.0),
-                Matrix4::<f32>::scaling(0.5, 0.5, 0.5),
+                Matrix4::<f32>::scaling(0.1, 0.1, 0.1),
             ))),
-        );
+        )),
+        None,
+        None,
+    ));
 
-        let floor = Shape::Sphere(Sphere::new(
-            Some(Matrix4::scaling(10.0, 0.01, 10.0)),
-            Some(floor_material.clone()),
+    let right_forward_sphere = Shape::Sphere(Sphere::new(
+        Some(Matrix4::translation(1.2, 0.5, -0.9) * Matrix4::scaling(0.7, 0.7, 0.7)),
+        Some(Material::new(
+            Some(Color::rgb(0.0, 0.5, 1.0)),
             None,
             None,
-        ));
+            None,
+            None,
+            None,
+            None,
+            None,
+            Some(Pattern::Stripe(Stripe::new(
+                (0.0, 0.8, 0.8),
+                (1.0, 1.0, 1.0),
+                Matrix4::<f32>::scaling(0.2, 0.2, 0.2),
+            ))),
+        )),
+        None,
+        None,
+    ));
 
-        let left_wall = Shape::Plane(Plane::new(
+    let world = World::new(
+        Some(PointLight::new(
+            Vector4::point(-10.0, 10.0, -10.0),
+            Color::rgb(1.0, 1.0, 1.0),
+        )),
+        vec![
+            floor,
+            middle_sphere,
+            right_forward_sphere,
+            right_back_sphere,
+        ],
+    );
+
+    let ratio = 2.0;
+
+    let camera = Camera::new(
+        200.0 * ratio,
+        150.0 * ratio,
+        PI / 3.0,
+        Vector4::point(0.0, 1.5, -5.0).view_transformation(
+            &Vector4::point(0.0, 1.0, 0.0),
+            &Vector4::vector(0.0, 1.0, 0.0),
+        ),
+    );
+
+    let canvas = camera.render(&world);
+
+    let ppm = canvas.to_ppm();
+    let result = ppm.out("ch10");
+    println!("Render /ppms/{:?}.ppm", result);
+}
+
+fn ch11() {
+    let floor_material = Material::new(
+        Some(Color::rgb(1.0, 0.9, 0.9)),
+        None,
+        None,
+        Some(0.0),
+        Some(0.0),
+        Some(0.3),
+        None,
+        None,
+        Some(Pattern::Checker(Checker::new(
+            (1.0, 1.0, 1.0),
+            (0.0, 0.0, 0.0),
+            Matrix4::<f32>::scaling(0.5, 0.5, 0.5),
+        ))),
+    );
+
+    let floor = Shape::Sphere(Sphere::new(
+        Some(Matrix4::scaling(10.0, 0.01, 10.0)),
+        Some(floor_material.clone()),
+        None,
+        None,
+    ));
+
+    let left_wall = Shape::Plane(Plane::new(
+        Some(
+            Matrix4::translation(0.0, 0.0, 8.0)
+                * Matrix4::rotation_y(-PI / 4.0)
+                * Matrix4::rotation_x(PI / 2.0),
+        ),
+        Some(Material::new(
+            Some(Color::rgb(0.8, 0.8, 0.8)),
+            None,
+            None,
+            None,
+            None,
+            Some(0.5),
+            None,
+            None,
+            None,
+        )),
+        None,
+    ));
+    let right_wall = Shape::Plane(Plane::new(
+        Some(
+            Matrix4::translation(0.0, 0.0, 8.0)
+                * Matrix4::rotation_y(PI / 4.0)
+                * Matrix4::rotation_x(PI / 2.0),
+        ),
+        Some(Material::new(
+            Some(Color::rgb(0.8, 0.8, 0.8)),
+            None,
+            None,
+            None,
+            None,
+            Some(0.5),
+            None,
+            None,
+            None,
+        )),
+        None,
+    ));
+
+    let middle_sphere = Shape::Sphere(Sphere::new(
+        Some(Matrix4::translation(-0.5, 1.0, 0.5)),
+        Some(Material::new(
+            Some(Color::rgb(1.0, 0.2, 0.2)),
+            None,
+            None,
+            None,
+            None,
+            Some(0.3),
+            None,
+            None,
+            None,
+        )),
+        None,
+        None,
+    ));
+    let right_back_sphere = Shape::Sphere(Sphere::new(
+        Some(Matrix4::translation(1.5, 0.5, 1.5) * Matrix4::scaling(0.8, 0.8, 0.8)),
+        Some(Material::new(
+            Some(Color::rgb(0.3, 0.4, 1.0)),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            Some(0.8),
+            Some(Pattern::Stripe(Stripe::new(
+                (0.0, 0.3, 1.0),
+                (1.0, 1.0, 1.0),
+                Matrix4::<f32>::scaling(0.7, 0.7, 0.7),
+            ))),
+        )),
+        None,
+        None,
+    ));
+    let right_forward_sphere = Shape::Sphere(Sphere::new(
+        Some(Matrix4::translation(1.5, 0.5, -0.5) * Matrix4::scaling(0.3, 0.3, 0.3)),
+        Some(Material::new(
+            Some(Color::rgb(0.1, 0.9, 0.2)),
+            None,
+            None,
+            None,
+            None,
+            Some(0.4),
+            None,
+            None,
+            None,
+        )),
+        None,
+        None,
+    ));
+
+    let world = World::new(
+        Some(PointLight::new(
+            Vector4::point(-10.0, 10.0, -10.0),
+            Color::rgb(1.0, 1.0, 1.0),
+        )),
+        vec![
+            floor,
+            left_wall,
+            right_wall,
+            middle_sphere,
+            right_forward_sphere,
+            right_back_sphere,
+        ],
+    );
+
+    let camera = Camera::new(
+        200.0,
+        150.0,
+        PI / 3.0,
+        Vector4::point(0.0, 1.5, -5.0).view_transformation(
+            &Vector4::point(0.0, 1.0, 0.0),
+            &Vector4::vector(0.0, 1.0, 0.0),
+        ),
+    );
+
+    let canvas = camera.render(&world);
+
+    let ppm = canvas.to_ppm();
+    let result = ppm.out("ch11");
+    println!("Render /ppms/{:?}.ppm", result);
+}
+
+fn ch12() {
+    let floor_material = Material::new(
+        Some(Color::rgb(1.0, 0.9, 0.9)),
+        None,
+        None,
+        Some(0.0),
+        Some(0.0),
+        Some(0.5),
+        Some(0.0),
+        Some(0.0),
+        Some(Pattern::Checker(Checker::new(
+            (1.0, 1.0, 1.0),
+            (0.0, 0.0, 0.0),
+            Matrix4::<f32>::scaling(0.5, 0.5, 0.5),
+        ))),
+    );
+
+    let floor = Shape::Sphere(Sphere::new(
+        Some(Matrix4::scaling(10.0, 0.01, 10.0)),
+        Some(floor_material.clone()),
+        None,
+        None,
+    ));
+
+    let shapes_iter = [-5., -3., -1., 1., 3., 5.].iter().map(|x| {
+        Shape::Cube(Cube::new(
             Some(
-                Matrix4::translation(0.0, 0.0, 8.0)
-                    * Matrix4::rotation_y(-PI / 4.0)
-                    * Matrix4::rotation_x(PI / 2.0),
+                Matrix4::translation(0.4 * x, 0.5, 0.2 * x)
+                    * Matrix4::scaling(0.3, 0.3, 0.3)
+                    * Matrix4::rotation_y(0.45),
             ),
             Some(Material::new(
-                Some(Color::rgb(0.8, 0.8, 0.8)),
-                None,
-                None,
-                None,
-                None,
-                Some(0.5),
-                None,
-                None,
-                None,
-            )),
-            None,
-        ));
-        let right_wall = Shape::Plane(Plane::new(
-            Some(
-                Matrix4::translation(0.0, 0.0, 8.0)
-                    * Matrix4::rotation_y(PI / 4.0)
-                    * Matrix4::rotation_x(PI / 2.0),
-            ),
-            Some(Material::new(
-                Some(Color::rgb(0.8, 0.8, 0.8)),
-                None,
-                None,
-                None,
-                None,
-                Some(0.5),
-                None,
-                None,
-                None,
-            )),
-            None,
-        ));
-
-        let middle_sphere = Shape::Sphere(Sphere::new(
-            Some(Matrix4::translation(-0.5, 1.0, 0.5)),
-            Some(Material::new(
-                Some(Color::rgb(1.0, 0.2, 0.2)),
+                Some(Color::rgb(x.abs() / 12., 0.1, 1.0 - x.abs() / 12.)),
                 None,
                 None,
                 None,
@@ -466,33 +579,67 @@ mod tests {
                 None,
                 None,
             )),
-            None,
-            None,
-        ));
-        let right_back_sphere = Shape::Sphere(Sphere::new(
-            Some(Matrix4::translation(1.5, 0.5, 1.5) * Matrix4::scaling(0.8, 0.8, 0.8)),
+        ))
+    });
+    let mut shapes = Vec::from_iter(shapes_iter);
+    shapes.push(floor);
+    let world = World::new(
+        Some(PointLight::new(
+            Vector4::point(-10.0, 10.0, -10.0),
+            Color::rgb(1.0, 1.0, 1.0),
+        )),
+        shapes,
+    );
+
+    let ratio = 2.0;
+    let camera = Camera::new(
+        200.0 * ratio,
+        150.0 * ratio,
+        PI / 3.0,
+        Vector4::point(0.0, 1.5, -5.0).view_transformation(
+            &Vector4::point(0.0, 1.0, 0.0),
+            &Vector4::vector(0.0, 1.0, 0.0),
+        ),
+    );
+
+    let canvas = camera.render(&world);
+
+    let ppm = canvas.to_ppm();
+    let result = ppm.out("ch12");
+    println!("Render /ppms/{:?}.ppm", result);
+}
+
+fn ch13_cylinder() {
+    let floor_material = Material::new(
+        Some(Color::rgb(1.0, 0.9, 0.9)),
+        None,
+        None,
+        Some(0.0),
+        Some(0.0),
+        Some(0.3),
+        Some(0.0),
+        Some(0.0),
+        Some(Pattern::Checker(Checker::new(
+            (1.0, 1.0, 1.0),
+            (0.0, 0.0, 0.0),
+            Matrix4::<f32>::scaling(0.5, 0.5, 0.5),
+        ))),
+    );
+
+    let floor = Shape::Sphere(Sphere::new(
+        Some(Matrix4::scaling(10.0, 0.01, 10.0)),
+        Some(floor_material.clone()),
+        None,
+        None,
+    ));
+    let shapes_iter = [-5., -3., -1., 1., 3., 5.].iter().map(|x| {
+        Shape::Cylinder(Cylinder::new(
+            Some(
+                Matrix4::translation(0.35 * x, 0.5, -0.4 * x.abs())
+                    * Matrix4::scaling(0.3, 1.0, 0.3),
+            ),
             Some(Material::new(
-                Some(Color::rgb(0.3, 0.4, 1.0)),
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
-                Some(0.8),
-                Some(Pattern::Stripe(Stripe::new(
-                    (0.0, 0.3, 1.0),
-                    (1.0, 1.0, 1.0),
-                    Matrix4::<f32>::scaling(0.7, 0.7, 0.7),
-                ))),
-            )),
-            None,
-            None,
-        ));
-        let right_forward_sphere = Shape::Sphere(Sphere::new(
-            Some(Matrix4::translation(1.5, 0.5, -0.5) * Matrix4::scaling(0.3, 0.3, 0.3)),
-            Some(Material::new(
-                Some(Color::rgb(0.1, 0.9, 0.2)),
+                Some(Color::rgb(0.1, x.abs() / 12., 0.9)),
                 None,
                 None,
                 None,
@@ -502,260 +649,107 @@ mod tests {
                 None,
                 None,
             )),
-            None,
-            None,
-        ));
+            Some(0.0),
+            Some(1.5),
+            Some(true),
+        ))
+    });
+    let mut shapes = Vec::from_iter(shapes_iter);
+    shapes.push(floor);
+    let world = World::new(
+        Some(PointLight::new(
+            Vector4::point(-10.0, 10.0, -10.0),
+            Color::rgb(1.0, 1.0, 1.0),
+        )),
+        shapes,
+    );
 
-        let world = World::new(
-            Some(PointLight::new(
-                Vector4::point(-10.0, 10.0, -10.0),
-                Color::rgb(1.0, 1.0, 1.0),
-            )),
-            vec![
-                floor,
-                left_wall,
-                right_wall,
-                middle_sphere,
-                right_forward_sphere,
-                right_back_sphere,
-            ],
-        );
+    let ratio = 2.0;
+    let camera = Camera::new(
+        200.0 * ratio,
+        150.0 * ratio,
+        PI / 3.0,
+        Vector4::point(0.0, 1.5, -5.0).view_transformation(
+            &Vector4::point(0.0, 1.0, 0.0),
+            &Vector4::vector(0.0, 1.0, 0.0),
+        ),
+    );
 
-        let camera = Camera::new(
-            200.0,
-            150.0,
-            PI / 3.0,
-            Vector4::point(0.0, 1.5, -5.0).view_transformation(
-                &Vector4::point(0.0, 1.0, 0.0),
-                &Vector4::vector(0.0, 1.0, 0.0),
+    let canvas = camera.render(&world);
+
+    let ppm = canvas.to_ppm();
+    let result = ppm.out("ch13_cylinder");
+}
+
+fn ch13_cone() {
+    let floor_material = Material::new(
+        Some(Color::rgb(1.0, 0.9, 0.9)),
+        None,
+        None,
+        Some(0.0),
+        Some(0.0),
+        Some(0.3),
+        Some(0.0),
+        Some(0.0),
+        Some(Pattern::Checker(Checker::new(
+            (1.0, 1.0, 1.0),
+            (0.0, 0.0, 0.0),
+            Matrix4::<f32>::scaling(0.5, 0.5, 0.5),
+        ))),
+    );
+
+    let floor = Shape::Sphere(Sphere::new(
+        Some(Matrix4::scaling(10.0, 0.01, 10.0)),
+        Some(floor_material.clone()),
+        None,
+        None,
+    ));
+    let shapes_iter = [-5., -3., -1., 1., 3., 5.].iter().map(|x| {
+        Shape::Cone(Cone::new(
+            Some(
+                Matrix4::translation(0.35 * x, 1.0, -0.4 * x.abs())
+                    * Matrix4::scaling(0.4, 1.0, 0.4),
             ),
-        );
-
-        let canvas = camera.render(&world);
-
-        let ppm = canvas.to_ppm();
-        let result = ppm.out("ch11");
-        assert_eq!(result.unwrap(), "ppms/ch11.ppm");
-    }
-
-    #[test]
-    fn ch12() {
-        let floor_material = Material::new(
-            Some(Color::rgb(1.0, 0.9, 0.9)),
-            None,
-            None,
-            Some(0.0),
-            Some(0.0),
-            Some(0.5),
-            Some(0.0),
-            Some(0.0),
-            Some(Pattern::Checker(Checker::new(
-                (1.0, 1.0, 1.0),
-                (0.0, 0.0, 0.0),
-                Matrix4::<f32>::scaling(0.5, 0.5, 0.5),
-            ))),
-        );
-
-        let floor = Shape::Sphere(Sphere::new(
-            Some(Matrix4::scaling(10.0, 0.01, 10.0)),
-            Some(floor_material.clone()),
-            None,
-            None,
-        ));
-
-        let shapes_iter = [-5., -3., -1., 1., 3., 5.].iter().map(|x| {
-            Shape::Cube(Cube::new(
-                Some(
-                    Matrix4::translation(0.4 * x, 0.5, 0.2 * x)
-                        * Matrix4::scaling(0.3, 0.3, 0.3)
-                        * Matrix4::rotation_y(0.45),
-                ),
-                Some(Material::new(
-                    Some(Color::rgb(x.abs() / 12., 0.1, 1.0 - x.abs() / 12.)),
-                    None,
-                    None,
-                    None,
-                    None,
-                    Some(0.3),
-                    None,
-                    None,
-                    None,
-                )),
-            ))
-        });
-        let mut shapes = Vec::from_iter(shapes_iter);
-        shapes.push(floor);
-        let world = World::new(
-            Some(PointLight::new(
-                Vector4::point(-10.0, 10.0, -10.0),
-                Color::rgb(1.0, 1.0, 1.0),
+            Some(Material::new(
+                Some(Color::rgb(0.1, x.abs() / 12., 0.9)),
+                None,
+                None,
+                None,
+                None,
+                Some(0.4),
+                None,
+                None,
+                None,
             )),
-            shapes,
-        );
-
-        let ratio = 2.0;
-        let camera = Camera::new(
-            200.0 * ratio,
-            150.0 * ratio,
-            PI / 3.0,
-            Vector4::point(0.0, 1.5, -5.0).view_transformation(
-                &Vector4::point(0.0, 1.0, 0.0),
-                &Vector4::vector(0.0, 1.0, 0.0),
-            ),
-        );
-
-        let canvas = camera.render(&world);
-
-        let ppm = canvas.to_ppm();
-        let result = ppm.out("ch12");
-        assert_eq!(result.unwrap(), "ppms/ch12.ppm");
-    }
-
-    #[test]
-    fn ch13_cylinder() {
-        let floor_material = Material::new(
-            Some(Color::rgb(1.0, 0.9, 0.9)),
-            None,
-            None,
             Some(0.0),
-            Some(0.0),
-            Some(0.3),
-            Some(0.0),
-            Some(0.0),
-            Some(Pattern::Checker(Checker::new(
-                (1.0, 1.0, 1.0),
-                (0.0, 0.0, 0.0),
-                Matrix4::<f32>::scaling(0.5, 0.5, 0.5),
-            ))),
-        );
+            Some(1.0),
+            Some(true),
+        ))
+    });
+    let mut shapes = Vec::from_iter(shapes_iter);
+    shapes.push(floor);
+    let world = World::new(
+        Some(PointLight::new(
+            Vector4::point(-10.0, 10.0, -10.0),
+            Color::rgb(1.0, 1.0, 1.0),
+        )),
+        shapes,
+    );
 
-        let floor = Shape::Sphere(Sphere::new(
-            Some(Matrix4::scaling(10.0, 0.01, 10.0)),
-            Some(floor_material.clone()),
-            None,
-            None,
-        ));
-        let shapes_iter = [-5., -3., -1., 1., 3., 5.].iter().map(|x| {
-            Shape::Cylinder(Cylinder::new(
-                Some(
-                    Matrix4::translation(0.35 * x, 0.5, -0.4 * x.abs())
-                        * Matrix4::scaling(0.3, 1.0, 0.3),
-                ),
-                Some(Material::new(
-                    Some(Color::rgb(0.1, x.abs() / 12., 0.9)),
-                    None,
-                    None,
-                    None,
-                    None,
-                    Some(0.4),
-                    None,
-                    None,
-                    None,
-                )),
-                Some(0.0),
-                Some(1.5),
-                Some(true),
-            ))
-        });
-        let mut shapes = Vec::from_iter(shapes_iter);
-        shapes.push(floor);
-        let world = World::new(
-            Some(PointLight::new(
-                Vector4::point(-10.0, 10.0, -10.0),
-                Color::rgb(1.0, 1.0, 1.0),
-            )),
-            shapes,
-        );
+    let ratio = 2.0;
+    let camera = Camera::new(
+        200.0 * ratio,
+        150.0 * ratio,
+        PI / 3.0,
+        Vector4::point(0.0, 1.0, -5.0).view_transformation(
+            &Vector4::point(0.0, 1.0, 0.0),
+            &Vector4::vector(0.0, 1.0, 0.0),
+        ),
+    );
 
-        let ratio = 2.0;
-        let camera = Camera::new(
-            200.0 * ratio,
-            150.0 * ratio,
-            PI / 3.0,
-            Vector4::point(0.0, 1.5, -5.0).view_transformation(
-                &Vector4::point(0.0, 1.0, 0.0),
-                &Vector4::vector(0.0, 1.0, 0.0),
-            ),
-        );
+    let canvas = camera.render(&world);
 
-        let canvas = camera.render(&world);
-
-        let ppm = canvas.to_ppm();
-        let result = ppm.out("ch13_cylinder");
-        assert_eq!(result.unwrap(), "ppms/ch13_cylinder.ppm");
-    }
-
-    #[test]
-    fn ch13_cone() {
-        let floor_material = Material::new(
-            Some(Color::rgb(1.0, 0.9, 0.9)),
-            None,
-            None,
-            Some(0.0),
-            Some(0.0),
-            Some(0.3),
-            Some(0.0),
-            Some(0.0),
-            Some(Pattern::Checker(Checker::new(
-                (1.0, 1.0, 1.0),
-                (0.0, 0.0, 0.0),
-                Matrix4::<f32>::scaling(0.5, 0.5, 0.5),
-            ))),
-        );
-
-        let floor = Shape::Sphere(Sphere::new(
-            Some(Matrix4::scaling(10.0, 0.01, 10.0)),
-            Some(floor_material.clone()),
-            None,
-            None,
-        ));
-        let shapes_iter = [-5., -3., -1., 1., 3., 5.].iter().map(|x| {
-            Shape::Cone(Cone::new(
-                Some(
-                    Matrix4::translation(0.35 * x, 1.0, -0.4 * x.abs())
-                        * Matrix4::scaling(0.4, 1.0, 0.4),
-                ),
-                Some(Material::new(
-                    Some(Color::rgb(0.1, x.abs() / 12., 0.9)),
-                    None,
-                    None,
-                    None,
-                    None,
-                    Some(0.4),
-                    None,
-                    None,
-                    None,
-                )),
-                Some(0.0),
-                Some(1.0),
-                Some(true),
-            ))
-        });
-        let mut shapes = Vec::from_iter(shapes_iter);
-        shapes.push(floor);
-        let world = World::new(
-            Some(PointLight::new(
-                Vector4::point(-10.0, 10.0, -10.0),
-                Color::rgb(1.0, 1.0, 1.0),
-            )),
-            shapes,
-        );
-
-        let ratio = 2.0;
-        let camera = Camera::new(
-            200.0 * ratio,
-            150.0 * ratio,
-            PI / 3.0,
-            Vector4::point(0.0, 1.0, -5.0).view_transformation(
-                &Vector4::point(0.0, 1.0, 0.0),
-                &Vector4::vector(0.0, 1.0, 0.0),
-            ),
-        );
-
-        let canvas = camera.render(&world);
-
-        let ppm = canvas.to_ppm();
-        let result = ppm.out("ch13_cone");
-        assert_eq!(result.unwrap(), "ppms/ch13_cone.ppm");
-    }
+    let ppm = canvas.to_ppm();
+    let result = ppm.out("ch13_cone");
+    println!("Render /ppms/{:?}.ppm", result);
 }
