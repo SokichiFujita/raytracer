@@ -34,7 +34,7 @@ fn main() {
     ch11();
     ch12();
     ch13_cylinder();
-    ch13_cylinder();
+    ch13_cone();
 }
 
 fn ch5() {
@@ -679,6 +679,7 @@ fn ch13_cylinder() {
 
     let ppm = canvas.to_ppm();
     let result = ppm.out("ch13_cylinder");
+    println!("Render /ppms/{:?}.ppm", result);
 }
 
 fn ch13_cone() {

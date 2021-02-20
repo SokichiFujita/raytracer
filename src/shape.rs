@@ -3,7 +3,6 @@ use crate::{
     material::Material, matrix::CGMatrix, plane::Plane, ray::Ray, sphere::Sphere,
     tuple::TupleOperation,
 };
-use approx::assert_relative_eq;
 use na::{Matrix4, Vector4};
 use std::mem::swap;
 
