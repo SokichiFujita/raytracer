@@ -6,5 +6,7 @@ A Ray Tracer written in Rust.
 
 ```
 cargo build
-cargo test
+cargo run
 ```
+
+Open `/ppms/*.ppms` files.
