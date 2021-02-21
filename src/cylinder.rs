@@ -11,6 +11,7 @@ pub struct Cylinder {
     pub min: f32,
     pub max: f32,
     pub closed: bool,
+    pub parent: Option<String>,
 }
 
 impl PartialEq for Cylinder {
@@ -26,6 +27,7 @@ impl Cylinder {
         min: Option<f32>,
         max: Option<f32>,
         closed: Option<bool>,
+        parent: Option<String>,
     ) -> Cylinder {
         Cylinder {
             id: Shape::generate_id(Some("cylinder")),
@@ -49,10 +51,11 @@ impl Cylinder {
                 Some(x) => x,
                 None => false,
             },
+            parent,
         }
     }
     pub fn new_default() -> Cylinder {
-        Cylinder::new(None, None, None, None, None)
+        Cylinder::new(None, None, None, None, None, None)
     }
 }
 
@@ -166,8 +169,14 @@ mod tests {
             (Vector4::point(0., 1., -5.), Vector4::vector(0., 0., 1.), 0),
             (Vector4::point(0., 1.5, -2.), Vector4::vector(0., 0., 1.), 2),
         ] {
-            let shape =
-                Shape::Cylinder(Cylinder::new(None, None, Some(1.0), Some(2.0), Some(false)));
+            let shape = Shape::Cylinder(Cylinder::new(
+                None,
+                None,
+                Some(1.0),
+                Some(2.0),
+                Some(false),
+                None,
+            ));
             let ray = Ray::new(origin, direction.normalize());
             let xs = shape.intersect(&ray);
             assert_eq!(xs.len(), count);
@@ -183,8 +192,14 @@ mod tests {
             (Vector4::point(0., 0., -2.), Vector4::vector(0., 1., 2.), 2),
             (Vector4::point(0., -1., -2.), Vector4::vector(0., 1., 1.), 2),
         ] {
-            let shape =
-                Shape::Cylinder(Cylinder::new(None, None, Some(1.0), Some(2.0), Some(true)));
+            let shape = Shape::Cylinder(Cylinder::new(
+                None,
+                None,
+                Some(1.0),
+                Some(2.0),
+                Some(true),
+                None,
+            ));
             let ray = Ray::new(origin, direction.normalize());
             let xs = shape.intersect(&ray);
             assert_eq!(xs.len(), count);
@@ -201,8 +216,14 @@ mod tests {
             (Vector4::point(0.5, 2., 0.), Vector4::vector(0., 1., 0.)),
             (Vector4::point(0., 2., 0.5), Vector4::vector(0., 1., 0.)),
         ] {
-            let shape =
-                Shape::Cylinder(Cylinder::new(None, None, Some(1.0), Some(2.0), Some(true)));
+            let shape = Shape::Cylinder(Cylinder::new(
+                None,
+                None,
+                Some(1.0),
+                Some(2.0),
+                Some(true),
+                None,
+            ));
             assert_relative_eq!(shape.normal(point), normal);
         }
     }

@@ -32,13 +32,13 @@ impl PartialEq for Shape {
 #[allow(dead_code)]
 impl Shape {
     pub fn new_sphere() -> Self {
-        Shape::Sphere(Sphere::new(None, None, None, None))
+        Shape::Sphere(Sphere::new(None, None, None, None, None))
     }
     pub fn new_sphere_default() -> Self {
         Shape::Sphere(Sphere::new_default())
     }
     pub fn new_plane() -> Self {
-        Shape::Plane(Plane::new(None, None, None))
+        Shape::Plane(Plane::new(None, None, None, None))
     }
     pub fn new_plane_default() -> Self {
         Shape::Plane(Plane::new_default())
@@ -50,9 +50,11 @@ impl Shape {
                 Some(Material::new_default_world()),
                 None,
                 None,
+                None,
             )),
             Shape::Sphere(Sphere::new(
                 Some(Matrix4::scaling(0.5, 0.5, 0.5)),
+                None,
                 None,
                 None,
                 None,

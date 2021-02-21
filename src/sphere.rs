@@ -10,6 +10,7 @@ pub struct Sphere {
     pub material: Material,
     pub position: Vector4<f32>, //origin
     pub r: f32,
+    pub parent: Option<String>,
 }
 
 impl PartialEq for Sphere {
@@ -24,6 +25,7 @@ impl Sphere {
         matrial: Option<Material>,
         position: Option<Vector4<f32>>,
         r: Option<f32>,
+        parent: Option<String>,
     ) -> Sphere {
         Sphere {
             id: Shape::generate_id(Some("sphere")),
@@ -43,10 +45,11 @@ impl Sphere {
                 Some(x) => x,
                 None => 1.0,
             },
+            parent,
         }
     }
     pub fn new_default() -> Sphere {
-        Sphere::new(None, None, None, None)
+        Sphere::new(None, None, None, None, None)
     }
 }
 
@@ -224,6 +227,7 @@ mod tests {
             None,
             None,
             None,
+            None,
         ));
 
         let point = Vector4::point(0., 1.70711, -0.70711);
@@ -240,6 +244,7 @@ mod tests {
     fn computing_normal_on_transformed_sphere() {
         let sphere = Shape::Sphere(Sphere::new(
             Some(Matrix4::scaling(1.0, 0.5, 1.0) * Matrix4::rotation_z(PI / 5.0)),
+            None,
             None,
             None,
             None,

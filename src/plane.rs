@@ -9,6 +9,7 @@ pub struct Plane {
     pub transformation: Matrix4<f32>,
     pub material: Material,
     pub position: Vector4<f32>, //only the y-axis is used. size is infinite.
+    pub parent: Option<String>,
 }
 
 impl PartialEq for Plane {
@@ -22,6 +23,7 @@ impl Plane {
         transformation: Option<Matrix4<f32>>,
         matrial: Option<Material>,
         position: Option<Vector4<f32>>,
+        parent: Option<String>,
     ) -> Plane {
         Plane {
             id: Shape::generate_id(Some("plane")),
@@ -37,10 +39,11 @@ impl Plane {
                 Some(x) => x,
                 None => Vector4::point(0.0, 0.0, 0.0),
             },
+            parent,
         }
     }
     pub fn new_default() -> Plane {
-        Plane::new(None, None, None)
+        Plane::new(None, None, None, None)
     }
 }
 

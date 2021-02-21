@@ -191,6 +191,7 @@ mod tests {
             None,
             None,
             None,
+            None,
         ));
         let world = World::new(
             Some(PointLight::from_tuple((0.0, 0.0, -10.0), (1.0, 1.0, 1.0))),
@@ -208,6 +209,7 @@ mod tests {
     fn hit_offset_point() {
         let shape = Shape::Sphere(Sphere::new(
             Some(Matrix4::<f32>::translation(0.0, 0.0, 1.0)),
+            None,
             None,
             None,
             None,
@@ -307,6 +309,7 @@ mod tests {
                 None,
             )),
             None,
+            None,
         ));
         let ball = Shape::Sphere(Sphere::new(
             Some(Matrix4::<f32>::translation(0., -3.5, -0.5)),
@@ -321,6 +324,7 @@ mod tests {
                 None,
                 None,
             )),
+            None,
             None,
             None,
         ));
@@ -391,6 +395,7 @@ mod tests {
                 None,
             )),
             None,
+            None,
         ));
         let ball = Shape::Sphere(Sphere::new(
             Some(Matrix4::<f32>::translation(0., -3.5, -0.5)),
@@ -405,6 +410,7 @@ mod tests {
                 None,
                 None,
             )),
+            None,
             None,
             None,
         ));
