@@ -5,6 +5,7 @@ use crate::{
 };
 use na::{Matrix4, Vector4};
 use std::mem::swap;
+use ulid::Ulid;
 
 #[derive(Clone, Debug)]
 pub enum Shape {
@@ -57,6 +58,14 @@ impl Shape {
                 None,
             )),
         ]
+    }
+
+    pub fn generate_id(prefix: Option<&str>) -> String {
+        let ulid = Ulid::new().to_string();
+        if prefix.is_some() {
+            return format!("{}-{}", prefix.unwrap(), ulid).to_string();
+        }
+        ulid
     }
 
     pub fn set_material(&mut self, material: Material) -> Self {

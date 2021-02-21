@@ -1,7 +1,6 @@
 use na::Matrix4;
-use ulid::Ulid;
 
-use crate::material::Material;
+use crate::{material::Material, shape::Shape};
 
 #[derive(Clone, Debug)]
 pub struct Cube {
@@ -19,7 +18,7 @@ impl PartialEq for Cube {
 impl Cube {
     pub fn new(transformation: Option<Matrix4<f32>>, matrial: Option<Material>) -> Cube {
         Cube {
-            id: Ulid::new().to_string(),
+            id: Shape::generate_id(Some("cube")),
             transformation: match transformation {
                 Some(x) => x,
                 None => Matrix4::<f32>::identity(),

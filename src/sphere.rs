@@ -1,7 +1,6 @@
+use crate::{material::Material, shape::Shape};
 use na::{Matrix4, Vector4};
-use ulid::Ulid;
 
-use crate::material::Material;
 use crate::tuple::TupleOperation;
 
 #[derive(Clone, Debug)]
@@ -27,7 +26,7 @@ impl Sphere {
         r: Option<f32>,
     ) -> Sphere {
         Sphere {
-            id: Ulid::new().to_string(),
+            id: Shape::generate_id(Some("sphere")),
             transformation: match transformation {
                 Some(x) => x,
                 None => Matrix4::<f32>::identity(),

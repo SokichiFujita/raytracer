@@ -1,7 +1,6 @@
+use crate::{material::Material, shape::Shape};
 use na::{Matrix4, Vector4};
-use ulid::Ulid;
 
-use crate::material::Material;
 use crate::tuple::TupleOperation;
 
 #[derive(Clone, Debug)]
@@ -25,7 +24,7 @@ impl Plane {
         position: Option<Vector4<f32>>,
     ) -> Plane {
         Plane {
-            id: Ulid::new().to_string(),
+            id: Shape::generate_id(Some("plane")),
             transformation: match transformation {
                 Some(x) => x,
                 None => Matrix4::<f32>::identity(),

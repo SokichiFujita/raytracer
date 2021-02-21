@@ -1,8 +1,7 @@
 use std::f32::INFINITY;
 
-use crate::material::Material;
+use crate::{material::Material, shape::Shape};
 use na::Matrix4;
-use ulid::Ulid;
 
 #[derive(Clone, Debug)]
 pub struct Cylinder {
@@ -29,7 +28,7 @@ impl Cylinder {
         closed: Option<bool>,
     ) -> Cylinder {
         Cylinder {
-            id: Ulid::new().to_string(),
+            id: Shape::generate_id(Some("cylinder")),
             transformation: match transformation {
                 Some(x) => x,
                 None => Matrix4::<f32>::identity(),
