@@ -70,8 +70,7 @@ fn ch5() {
         }
     }
     let ppm = Ppm::new(canvas_pixels as usize, canvas_pixels as usize, &pixels);
-    let result = ppm.out("ch5");
-    println!("Render /ppms/{:?}.ppm", result);
+    ppm.out("ch5");
 }
 
 fn ch6() {
@@ -94,8 +93,7 @@ fn ch6() {
     ));
     let canvas = Canvas::render_single_shape(shape, 300);
     let ppm = Ppm::from_canvas(canvas);
-    let result = ppm.out("ch6");
-    println!("Render /ppms/{:?}.ppm", result);
+    ppm.out("ch6");
 }
 fn ch7() {
     let floor_material = Material::new(
@@ -193,8 +191,7 @@ fn ch7() {
     let canvas = camera.render(&world);
 
     let ppm = canvas.to_ppm();
-    let result = ppm.out("ch7");
-    println!("Render /ppms/{:?}.ppm", result);
+    ppm.out("ch7");
 }
 fn ch9() {
     let floor_material = Material::new(
@@ -270,8 +267,7 @@ fn ch9() {
     let canvas = camera.render(&world);
 
     let ppm = canvas.to_ppm();
-    let result = ppm.out("ch9");
-    println!("Render /ppms/{:?}.ppm", result);
+    ppm.out("ch9");
 }
 
 fn ch10() {
@@ -385,8 +381,7 @@ fn ch10() {
     let canvas = camera.render(&world);
 
     let ppm = canvas.to_ppm();
-    let result = ppm.out("ch10");
-    println!("Render /ppms/{:?}.ppm", result);
+    ppm.out("ch10");
 }
 
 fn ch11() {
@@ -533,8 +528,7 @@ fn ch11() {
     let canvas = camera.render(&world);
 
     let ppm = canvas.to_ppm();
-    let result = ppm.out("ch11");
-    println!("Render /ppms/{:?}.ppm", result);
+    ppm.out("ch11");
 }
 
 fn ch12() {
@@ -605,8 +599,7 @@ fn ch12() {
     let canvas = camera.render(&world);
 
     let ppm = canvas.to_ppm();
-    let result = ppm.out("ch12");
-    println!("Render /ppms/{:?}.ppm", result);
+    ppm.out("ch12");
 }
 
 fn ch13_cylinder() {
@@ -678,8 +671,7 @@ fn ch13_cylinder() {
     let canvas = camera.render(&world);
 
     let ppm = canvas.to_ppm();
-    let result = ppm.out("ch13_cylinder");
-    println!("Render /ppms/{:?}.ppm", result);
+    ppm.out("ch13_cylinder");
 }
 
 fn ch13_cone() {
@@ -751,6 +743,5 @@ fn ch13_cone() {
     let canvas = camera.render(&world);
 
     let ppm = canvas.to_ppm();
-    let result = ppm.out("ch13_cone");
-    println!("Render /ppms/{:?}.ppm", result);
+    ppm.out("ch13_cone");
 }

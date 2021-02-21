@@ -58,19 +58,26 @@ impl Ppm {
         }
     }
 
-    pub fn out(&self, filename: &'static str) -> Result<String, Error> {
+    pub fn render(&self, filename: &'static str) -> Result<usize, Error> {
         let path = format!("ppms/{}.ppm", filename);
         let mut f = File::create(&path)?;
         f.write_all(self.header.as_bytes())?;
         f.write_all(self.body.as_bytes())?;
-        Ok(path.to_string())
+        println!("Completed: /ppms/{:}.ppm", filename.to_string());
+        Ok(0)
+    }
+
+    pub fn out(&self, filename: &'static str) {
+        let result = self.render(filename);
+        if result.is_err() {
+            println!("Error: /ppms/{:?}.ppm", filename);
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
     #[test]
     fn ppm_out() {
         let color = Color::rgb(1.0, 0.6, 0.4);
@@ -92,7 +99,6 @@ mod tests {
             true
         );
         assert_eq!(ppm.body.len() > width * 3 * 4, true);
-        let result = ppm.out("canvas_test");
-        assert_eq!(result.unwrap(), "ppms/canvas_test.ppm");
+        ppm.out("canvas_test");
     }
 }
