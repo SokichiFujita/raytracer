@@ -10,6 +10,7 @@ pub mod cone;
 pub mod cube;
 pub mod cylinder;
 pub mod epsilon;
+pub mod group;
 pub mod intersection;
 pub mod material;
 pub mod matrix;

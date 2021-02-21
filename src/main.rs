@@ -205,12 +205,13 @@ fn ch7() {
     let ppm = canvas.to_ppm();
     ppm.out("ch7");
 }
+
 fn ch9() {
     let floor_material = Material::new(
         Some(Color::rgb(1.0, 0.9, 0.9)),
         None,
         None,
-        Some(0.0),
+        None,
         None,
         None,
         None,
@@ -218,19 +219,14 @@ fn ch9() {
         None,
     );
 
-    let floor = Shape::Plane(Plane::new(
-        Some(Matrix4::scaling(10.0, 0.01, 10.0)),
-        Some(floor_material.clone()),
-        None,
-        None,
-    ));
+    let floor = Shape::Plane(Plane::new(None, Some(floor_material.clone()), None, None));
 
     let middle_sphere = Shape::Sphere(Sphere::new(
         Some(Matrix4::translation(-0.5, 1.0, 0.5)),
         Some(Material::new(
             Some(Color::rgb(1.0, 0.2, 0.2)),
-            Some(0.7),
-            Some(0.3),
+            None,
+            None,
             None,
             None,
             None,
@@ -246,8 +242,8 @@ fn ch9() {
         Some(Matrix4::translation(1.5, 0.5, -0.5) * Matrix4::scaling(0.5, 0.5, 0.5)),
         Some(Material::new(
             Some(Color::rgb(0.3, 0.4, 1.0)),
-            Some(0.7),
-            Some(0.3),
+            None,
+            None,
             None,
             None,
             None,
@@ -540,9 +536,10 @@ fn ch11() {
         ],
     );
 
+    let ratio = 3.0;
     let camera = Camera::new(
-        200.0,
-        150.0,
+        200.0 * ratio,
+        150.0 * ratio,
         PI / 3.0,
         Vector4::point(0.0, 1.5, -5.0).view_transformation(
             &Vector4::point(0.0, 1.0, 0.0),
@@ -563,7 +560,7 @@ fn ch12() {
         None,
         Some(0.0),
         Some(0.0),
-        Some(0.5),
+        Some(0.7),
         Some(0.0),
         Some(0.0),
         Some(Pattern::Checker(Checker::new(
@@ -581,26 +578,58 @@ fn ch12() {
         None,
     ));
 
-    let shapes_iter = [-5., -3., -1., 1., 3., 5.].iter().map(|x| {
-        Shape::Cube(Cube::new(
-            Some(
-                Matrix4::translation(0.4 * x, 0.5, 0.2 * x)
-                    * Matrix4::scaling(0.3, 0.3, 0.3)
-                    * Matrix4::rotation_y(0.45),
-            ),
-            Some(Material::new(
-                Some(Color::rgb(x.abs() / 12., 0.1, 1.0 - x.abs() / 12.)),
+    let shapes_iter = [-7., -5., -3., -1., 1., 3., 5., 7.].iter().map(|x| {
+        if *x < 0. {
+            Shape::Cube(Cube::new(
+                Some(
+                    Matrix4::translation(0.45 * x, 0.3, 0.6 * x.abs() - 3.0)
+                        * Matrix4::scaling(0.3, 0.3, 0.3)
+                        * Matrix4::rotation_y(0.45),
+                ),
+                Some(Material::new(
+                    Some(Color::rgb(
+                        1.5 * x.abs() / 12.,
+                        0.1,
+                        1.0 - x.abs() * 1.5 / 12.,
+                    )),
+                    None,
+                    None,
+                    None,
+                    None,
+                    Some(0.4),
+                    None,
+                    None,
+                    None,
+                )),
+                None,
+            ))
+        } else {
+            Shape::Sphere(Sphere::new(
+                Some(
+                    Matrix4::translation(0.45 * x, 0.4, 0.6 * x.abs() - 3.0)
+                        * Matrix4::scaling(0.4, 0.4, 0.4)
+                        * Matrix4::rotation_y(0.45),
+                ),
+                Some(Material::new(
+                    Some(Color::rgb(
+                        1.5 * x.abs() / 12.,
+                        0.1,
+                        1.0 - x.abs() * 1.5 / 12.,
+                    )),
+                    None,
+                    None,
+                    None,
+                    None,
+                    Some(0.4),
+                    None,
+                    None,
+                    None,
+                )),
                 None,
                 None,
                 None,
-                None,
-                Some(0.3),
-                None,
-                None,
-                None,
-            )),
-            None,
-        ))
+            ))
+        }
     });
     let mut shapes = Vec::from_iter(shapes_iter);
     shapes.push(floor);
@@ -612,14 +641,14 @@ fn ch12() {
         shapes,
     );
 
-    let ratio = 2.0;
+    let ratio = 1.0;
     let camera = Camera::new(
         200.0 * ratio,
         150.0 * ratio,
         PI / 3.0,
-        Vector4::point(0.0, 1.5, -5.0).view_transformation(
-            &Vector4::point(0.0, 1.0, 0.0),
-            &Vector4::vector(0.0, 1.0, 0.0),
+        Vector4::point(0.0, 1.0, -5.0).view_transformation(
+            &Vector4::point(0.0, 0.5, 0.0),
+            &Vector4::vector(0.0, 0.5, 0.0),
         ),
     );
 
@@ -686,7 +715,7 @@ fn ch13_cylinder() {
         shapes,
     );
 
-    let ratio = 2.0;
+    let ratio = 3.0;
     let camera = Camera::new(
         200.0 * ratio,
         150.0 * ratio,
@@ -760,7 +789,7 @@ fn ch13_cone() {
         shapes,
     );
 
-    let ratio = 2.0;
+    let ratio = 3.0;
     let camera = Camera::new(
         200.0 * ratio,
         150.0 * ratio,

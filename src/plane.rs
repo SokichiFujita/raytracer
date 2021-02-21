@@ -21,7 +21,7 @@ impl PartialEq for Plane {
 impl Plane {
     pub fn new(
         transformation: Option<Matrix4<f32>>,
-        matrial: Option<Material>,
+        material: Option<Material>,
         position: Option<Vector4<f32>>,
         parent: Option<String>,
     ) -> Plane {
@@ -31,7 +31,7 @@ impl Plane {
                 Some(x) => x,
                 None => Matrix4::<f32>::identity(),
             },
-            material: match matrial {
+            material: match material {
                 Some(x) => x,
                 None => Material::new_default(),
             },
