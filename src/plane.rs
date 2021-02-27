@@ -45,6 +45,16 @@ impl Plane {
     pub fn new_default() -> Plane {
         Plane::new(None, None, None, None)
     }
+
+    pub fn new_from(plane: &Plane) -> Plane {
+        Plane {
+            id: plane.id.clone(),
+            transformation: plane.transformation.clone(),
+            material: plane.material.clone(),
+            position: plane.position.clone(),
+            parent: plane.parent.clone(),
+        }
+    }
 }
 
 #[cfg(test)]

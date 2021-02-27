@@ -33,18 +33,14 @@ impl World {
         World::new(None, Shape::new_world_defaults())
     }
     pub fn intersect(&self, ray: &Ray) -> Vec<Intersection> {
-        let intersections = &self
+        let mut intersections = self
             .shapes
             .iter()
             .map(|x| x.intersect(&ray))
+            .flatten()
             .collect::<Vec<_>>();
-        let mut flat_intersection = intersections
-            .iter()
-            .flat_map(|array| array.iter())
-            .cloned()
-            .collect::<Vec<_>>();
-        flat_intersection.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
-        flat_intersection
+        intersections.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
+        intersections.clone()
     }
     pub fn is_shadowed(&self, point: Vector4<f32>) -> bool {
         let light_vector = self.pointlight.position - point;
