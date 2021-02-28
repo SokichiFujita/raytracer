@@ -102,7 +102,6 @@ mod tests {
             None,
             None,
             None,
-            None,
         ));
         let xs = s.intersect(&ray);
         assert_eq!(xs.len(), 2);

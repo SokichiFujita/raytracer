@@ -46,13 +46,7 @@ fn ch5() {
     let half = wall_size / 2.0;
 
     let ray = Ray::from_tuple((0.0, 0.0, ray_origin_z), (0.0, 0.0, wall_z));
-    let sphere = Sphere::new(
-        Some(Matrix4::translation(0.1, 0.1, 0.0)),
-        None,
-        None,
-        None,
-        None,
-    );
+    let sphere = Sphere::new(Some(Matrix4::translation(0.1, 0.1, 0.0)), None, None, None);
     let shape = Shape::Sphere(sphere);
 
     let mut pixels: Vec<Color> = vec![];
@@ -96,7 +90,6 @@ fn ch6() {
         Some(material),
         None,
         None,
-        None,
     ));
     let canvas = Canvas::render_single_shape(shape, 300);
     let ppm = Ppm::from_canvas(canvas);
@@ -120,7 +113,6 @@ fn ch7() {
         Some(floor_material.clone()),
         None,
         None,
-        None,
     ));
     let left_wall = Shape::Sphere(Sphere::new(
         Some(
@@ -132,7 +124,6 @@ fn ch7() {
         Some(floor_material.clone()),
         None,
         None,
-        None,
     ));
     let right_wall = Shape::Sphere(Sphere::new(
         Some(
@@ -142,7 +133,6 @@ fn ch7() {
                 * Matrix4::scaling(10.0, 0.01, 10.0),
         ),
         Some(floor_material.clone()),
-        None,
         None,
         None,
     ));
@@ -162,7 +152,6 @@ fn ch7() {
         )),
         None,
         None,
-        None,
     ));
     let right_sphere = Shape::Sphere(Sphere::new(
         Some(Matrix4::translation(1.5, 0.5, -0.5) * Matrix4::scaling(0.5, 0.5, 0.5)),
@@ -177,7 +166,6 @@ fn ch7() {
             None,
             None,
         )),
-        None,
         None,
         None,
     ));
@@ -219,7 +207,7 @@ fn ch9() {
         None,
     );
 
-    let floor = Shape::Plane(Plane::new(None, Some(floor_material.clone()), None, None));
+    let floor = Shape::Plane(Plane::new(None, Some(floor_material.clone()), None));
 
     let middle_sphere = Shape::Sphere(Sphere::new(
         Some(Matrix4::translation(-0.5, 1.0, 0.5)),
@@ -236,7 +224,6 @@ fn ch9() {
         )),
         None,
         None,
-        None,
     ));
     let right_sphere = Shape::Sphere(Sphere::new(
         Some(Matrix4::translation(1.5, 0.5, -0.5) * Matrix4::scaling(0.5, 0.5, 0.5)),
@@ -251,7 +238,6 @@ fn ch9() {
             None,
             None,
         )),
-        None,
         None,
         None,
     ));
@@ -303,7 +289,6 @@ fn ch10() {
         Some(floor_material.clone()),
         None,
         None,
-        None,
     ));
 
     let middle_sphere = Shape::Sphere(Sphere::new(
@@ -319,7 +304,6 @@ fn ch10() {
             None,
             None,
         )),
-        None,
         None,
         None,
     ));
@@ -343,7 +327,6 @@ fn ch10() {
         )),
         None,
         None,
-        None,
     ));
 
     let right_forward_sphere = Shape::Sphere(Sphere::new(
@@ -363,7 +346,6 @@ fn ch10() {
                 Matrix4::<f32>::scaling(0.2, 0.2, 0.2),
             ))),
         )),
-        None,
         None,
         None,
     ));
@@ -421,7 +403,6 @@ fn ch11() {
         Some(floor_material.clone()),
         None,
         None,
-        None,
     ));
 
     let left_wall = Shape::Plane(Plane::new(
@@ -442,7 +423,6 @@ fn ch11() {
             None,
         )),
         None,
-        None,
     ));
     let right_wall = Shape::Plane(Plane::new(
         Some(
@@ -462,7 +442,6 @@ fn ch11() {
             None,
         )),
         None,
-        None,
     ));
 
     let middle_sphere = Shape::Sphere(Sphere::new(
@@ -478,7 +457,6 @@ fn ch11() {
             None,
             None,
         )),
-        None,
         None,
         None,
     ));
@@ -501,7 +479,6 @@ fn ch11() {
         )),
         None,
         None,
-        None,
     ));
     let right_forward_sphere = Shape::Sphere(Sphere::new(
         Some(Matrix4::translation(1.5, 0.5, -0.5) * Matrix4::scaling(0.3, 0.3, 0.3)),
@@ -516,7 +493,6 @@ fn ch11() {
             None,
             None,
         )),
-        None,
         None,
         None,
     ));
@@ -575,7 +551,6 @@ fn ch12() {
         Some(floor_material.clone()),
         None,
         None,
-        None,
     ));
 
     let shapes_iter = [-7., -5., -3., -1., 1., 3., 5., 7.].iter().map(|x| {
@@ -601,7 +576,6 @@ fn ch12() {
                     None,
                     None,
                 )),
-                None,
             ))
         } else {
             Shape::Sphere(Sphere::new(
@@ -625,7 +599,6 @@ fn ch12() {
                     None,
                     None,
                 )),
-                None,
                 None,
                 None,
             ))
@@ -680,7 +653,6 @@ fn ch13_cylinder() {
         Some(floor_material.clone()),
         None,
         None,
-        None,
     ));
     let shapes_iter = [-5., -3., -1., 1., 3., 5.].iter().map(|x| {
         Shape::Cylinder(Cylinder::new(
@@ -702,7 +674,6 @@ fn ch13_cylinder() {
             Some(0.0),
             Some(1.5),
             Some(true),
-            None,
         ))
     });
     let mut shapes = Vec::from_iter(shapes_iter);
@@ -754,7 +725,6 @@ fn ch13_cone() {
         Some(floor_material.clone()),
         None,
         None,
-        None,
     ));
     let shapes_iter = [-5., -3., -1., 1., 3., 5.].iter().map(|x| {
         Shape::Cone(Cone::new(
@@ -776,7 +746,6 @@ fn ch13_cone() {
             Some(0.0),
             Some(1.0),
             Some(true),
-            None,
         ))
     });
     let mut shapes = Vec::from_iter(shapes_iter);

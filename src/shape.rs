@@ -34,13 +34,13 @@ impl PartialEq for Shape {
 #[allow(dead_code)]
 impl Shape {
     pub fn new_sphere() -> Self {
-        Shape::Sphere(Sphere::new(None, None, None, None, None))
+        Shape::Sphere(Sphere::new(None, None, None, None))
     }
     pub fn new_sphere_default() -> Self {
         Shape::Sphere(Sphere::new_default())
     }
     pub fn new_plane() -> Self {
-        Shape::Plane(Plane::new(None, None, None, None))
+        Shape::Plane(Plane::new(None, None, None))
     }
     pub fn new_plane_default() -> Self {
         Shape::Plane(Plane::new_default())
@@ -52,11 +52,9 @@ impl Shape {
                 Some(Material::new_default_world()),
                 None,
                 None,
-                None,
             )),
             Shape::Sphere(Sphere::new(
                 Some(Matrix4::scaling(0.5, 0.5, 0.5)),
-                None,
                 None,
                 None,
                 None,
@@ -280,16 +278,7 @@ impl Shape {
                 .concat();
                 xs
             }
-            Shape::Group(x) => {
-                let mut intersections = x
-                    .children
-                    .iter()
-                    .map(|s| s.intersect_group(ray, x.transformation))
-                    .flatten()
-                    .collect::<Vec<_>>();
-                intersections.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
-                intersections
-            }
+            Shape::Group(x) => vec![],
         }
     }
 
@@ -413,49 +402,6 @@ impl Shape {
         intersections
     }
 
-    pub fn world_to_object(&self, mut point: Vector4<f32>) -> Vector4<f32> {
-        match self {
-            Shape::Plane(x) => {
-                let mut pt = point;
-                if x.parent.is_some() {
-                    pt = self.world_to_object(pt);
-                }
-                x.transformation.try_inverse().unwrap() * pt
-            }
-            Shape::Sphere(x) => {
-                let mut pt = point;
-                if x.parent.is_some() {
-                    pt = self.world_to_object(pt);
-                }
-                x.transformation.try_inverse().unwrap() * pt
-            }
-            Shape::Cube(x) => {
-                if x.parent.is_some() {
-                    point = self.world_to_object(point);
-                }
-                x.transformation.try_inverse().unwrap() * point
-            }
-            Shape::Cylinder(x) => {
-                if x.parent.is_some() {
-                    point = self.world_to_object(point);
-                }
-                x.transformation.try_inverse().unwrap() * point
-            }
-            Shape::Cone(x) => {
-                if x.parent.is_some() {
-                    point = self.world_to_object(point);
-                }
-                x.transformation.try_inverse().unwrap() * point
-            }
-            Shape::Group(x) => {
-                if x.parent.is_some() {
-                    point = self.world_to_object(point);
-                }
-                x.transformation.try_inverse().unwrap() * point
-            }
-        }
-    }
-
     pub fn material(&self) -> &Material {
         match self {
             Shape::Plane(x) => &x.material,
@@ -486,28 +432,6 @@ impl Shape {
             Shape::Cylinder(x) => x.transformation.clone(),
             Shape::Cone(x) => x.transformation.clone(),
             Shape::Group(x) => x.transformation.clone(),
-        }
-    }
-
-    pub fn parent(&self) -> Option<String> {
-        match self {
-            Shape::Plane(x) => x.parent.clone(),
-            Shape::Sphere(x) => x.parent.clone(),
-            Shape::Cube(x) => x.parent.clone(),
-            Shape::Cylinder(x) => x.parent.clone(),
-            Shape::Cone(x) => x.parent.clone(),
-            Shape::Group(x) => x.parent.clone(),
-        }
-    }
-
-    pub fn set_parent(&mut self, id: String) {
-        match self {
-            Shape::Plane(x) => x.parent = Some(id),
-            Shape::Sphere(x) => x.parent = Some(id),
-            Shape::Cube(x) => x.parent = Some(id),
-            Shape::Cylinder(x) => x.parent = Some(id),
-            Shape::Cone(x) => x.parent = Some(id),
-            Shape::Group(x) => x.parent = Some(id),
         }
     }
 

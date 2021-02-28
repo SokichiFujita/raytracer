@@ -11,7 +11,6 @@ pub struct Cone {
     pub min: f32,
     pub max: f32,
     pub closed: bool,
-    pub parent: Option<String>,
 }
 
 impl PartialEq for Cone {
@@ -27,7 +26,6 @@ impl Cone {
         min: Option<f32>,
         max: Option<f32>,
         closed: Option<bool>,
-        parent: Option<String>,
     ) -> Cone {
         Cone {
             id: Shape::generate_id(Some("cone")),
@@ -51,11 +49,10 @@ impl Cone {
                 Some(x) => x,
                 None => false,
             },
-            parent,
         }
     }
     pub fn new_default() -> Cone {
-        Cone::new(None, None, None, None, None, None)
+        Cone::new(None, None, None, None, None)
     }
 }
 
@@ -131,14 +128,7 @@ mod tests {
                 4,
             ),
         ];
-        let shape = Shape::Cone(Cone::new(
-            None,
-            None,
-            Some(-0.5),
-            Some(0.5),
-            Some(true),
-            None,
-        ));
+        let shape = Shape::Cone(Cone::new(None, None, Some(-0.5), Some(0.5), Some(true)));
         for (origin, direction, count) in test_sets.into_iter() {
             let xs = shape.intersect(&Ray::new(origin, direction.normalize()));
             assert_eq!(xs.len(), count);

@@ -7,7 +7,6 @@ pub struct Cube {
     pub id: String,
     pub transformation: Matrix4<f32>,
     pub material: Material,
-    pub parent: Option<String>,
 }
 
 impl PartialEq for Cube {
@@ -17,11 +16,7 @@ impl PartialEq for Cube {
 }
 
 impl Cube {
-    pub fn new(
-        transformation: Option<Matrix4<f32>>,
-        matrial: Option<Material>,
-        parent: Option<String>,
-    ) -> Cube {
+    pub fn new(transformation: Option<Matrix4<f32>>, matrial: Option<Material>) -> Cube {
         Cube {
             id: Shape::generate_id(Some("cube")),
             transformation: match transformation {
@@ -32,11 +27,10 @@ impl Cube {
                 Some(x) => x,
                 None => Material::new_default(),
             },
-            parent,
         }
     }
     pub fn new_default() -> Cube {
-        Cube::new(None, None, None)
+        Cube::new(None, None)
     }
 }
 

@@ -227,7 +227,6 @@ mod tests {
             None,
             None,
             None,
-            None,
         ));
         let i1 = Intersection::new(5.0, &s);
         let comps = i1.prepare_computation(&ray, None);
@@ -263,7 +262,7 @@ mod tests {
             None,
             None,
         );
-        let s1 = Shape::Sphere(Sphere::new(None, Some(material), None, None, None));
+        let s1 = Shape::Sphere(Sphere::new(None, Some(material), None, None));
         let s2 = Shape::Sphere(Sphere::new(
             Some(Matrix4::scaling(0.5, 0.5, 0.5)),
             Some(Material::new(
@@ -277,7 +276,6 @@ mod tests {
                 None,
                 None,
             )),
-            None,
             None,
             None,
         ));
@@ -305,7 +303,6 @@ mod tests {
                 None,
                 None,
             )),
-            None,
             None,
         ));
         let ray = Ray::from_tuple(
@@ -339,7 +336,6 @@ mod tests {
                 None,
             )),
             None,
-            None,
         ));
         world.shapes.push(s3.clone());
         let ray = Ray::from_tuple(
@@ -366,19 +362,16 @@ mod tests {
             Some(ma),
             None,
             None,
-            None,
         ));
         let b = Shape::Sphere(Sphere::new(
             Some(Matrix4::<f32>::translation(0.0, 0.0, 1.0)),
             Some(mb),
             None,
             None,
-            None,
         ));
         let c = Shape::Sphere(Sphere::new(
             Some(Matrix4::<f32>::translation(0.0, 0.0, 1.0)),
             Some(mc),
-            None,
             None,
             None,
         ));
@@ -417,7 +410,6 @@ mod tests {
             Some(Material::new_glass()),
             None,
             None,
-            None,
         ));
         let i1 = Intersection::new(5.0, &s);
         let comps = i1.prepare_computation(&ray, None);
@@ -428,13 +420,7 @@ mod tests {
     //P.161
     #[test]
     fn the_schlick_approximation_under_total_internal_reflection() {
-        let shape = Shape::Sphere(Sphere::new(
-            None,
-            Some(Material::new_glass()),
-            None,
-            None,
-            None,
-        ));
+        let shape = Shape::Sphere(Sphere::new(None, Some(Material::new_glass()), None, None));
         let ray = Ray::from_tuple((0., 0., 2_f32.sqrt() / 2.0), (0., 1., 0.));
         let i1 = Intersection::new(-2_f32.sqrt() / 2.0, &shape);
         let i2 = Intersection::new(2_f32.sqrt() / 2.0, &shape);
@@ -446,13 +432,7 @@ mod tests {
 
     #[test]
     fn the_schlick_approximation_with_a_perpendicular_viewing_angle() {
-        let shape = Shape::Sphere(Sphere::new(
-            None,
-            Some(Material::new_glass()),
-            None,
-            None,
-            None,
-        ));
+        let shape = Shape::Sphere(Sphere::new(None, Some(Material::new_glass()), None, None));
         let ray = Ray::from_tuple((0., 0., 0.), (0., 1., 0.));
         let i1 = Intersection::new(-1.0, &shape);
         let i2 = Intersection::new(1.0, &shape);
@@ -465,13 +445,7 @@ mod tests {
 
     #[test]
     fn shlick_approximation_with_small_angle() {
-        let s = Shape::Sphere(Sphere::new(
-            None,
-            Some(Material::new_glass()),
-            None,
-            None,
-            None,
-        ));
+        let s = Shape::Sphere(Sphere::new(None, Some(Material::new_glass()), None, None));
         let ray = Ray::from_tuple((0., 0.99, -2.), (0., 0., 1.));
         let i1 = Intersection::new(1.8589, &s);
         let comps = i1.prepare_computation(&ray, None);

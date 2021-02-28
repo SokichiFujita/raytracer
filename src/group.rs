@@ -99,8 +99,6 @@ pub struct Group {
     pub id: String,
     pub transformation: Matrix4<f32>,
     pub material: Material,
-    pub children: Vec<Shape>,
-    pub parent: Option<String>,
 }
 
 impl PartialEq for Group {
@@ -111,12 +109,7 @@ impl PartialEq for Group {
 
 #[allow(dead_code)]
 impl Group {
-    pub fn new(
-        transformation: Option<Matrix4<f32>>,
-        material: Option<Material>,
-        children: Vec<Shape>,
-        parent: Option<String>,
-    ) -> Group {
+    pub fn new(transformation: Option<Matrix4<f32>>, material: Option<Material>) -> Group {
         Group {
             id: Shape::generate_id(Some("group")),
             transformation: match transformation {
@@ -127,29 +120,11 @@ impl Group {
                 Some(x) => x,
                 None => Material::new_default(),
             },
-            children,
-            parent,
         }
     }
 
     pub fn new_default() -> Group {
-        Group::new(None, None, vec![], None)
-    }
-
-    pub fn push_to_children(&mut self, shape: &mut Shape) {
-        shape.set_parent(self.id.clone());
-        self.children.push(shape.clone())
-    }
-
-    pub fn intersect(&mut self, ray: &Ray) -> Vec<Intersection> {
-        let mut intersections = self
-            .children
-            .iter()
-            .map(|x| x.intersect_group(ray, self.transformation))
-            .flatten()
-            .collect::<Vec<_>>();
-        intersections.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
-        intersections
+        Group::new(None, None)
     }
 }
 
@@ -168,13 +143,13 @@ mod tests {
     #[test]
     fn create_new_group() {
         let g = Group::new_default();
-        assert_eq!(g.children.len(), 0);
+        // assert_eq!(g.children.len(), 0);
     }
 
     #[test]
     fn shape_has_parent_attribute() {
         let s = Shape::Plane(Plane::new_default());
-        assert_eq!(s.parent(), None);
+        // assert_eq!(s.parent(), None);
     }
 
     #[test]
@@ -203,11 +178,9 @@ mod tests {
             None,
             None,
             None,
-            None,
         ));
         let s3 = Shape::Sphere(Sphere::new(
             Some(Matrix4::translation(5., 0., 0.)),
-            None,
             None,
             None,
             None,
@@ -232,15 +205,9 @@ mod tests {
 
     #[test]
     fn intersectiong_transformed_group() {
-        let g = Shape::Group(Group::new(
-            Some(Matrix4::scaling(2., 2., 2.)),
-            None,
-            vec![],
-            None,
-        ));
+        let g = Shape::Group(Group::new(Some(Matrix4::scaling(2., 2., 2.)), None));
         let s = Shape::Sphere(Sphere::new(
             Some(Matrix4::translation(5., 0., 0.)),
-            None,
             None,
             None,
             None,
@@ -257,21 +224,10 @@ mod tests {
 
     #[test]
     fn converting_point_from_world_to_object_space() {
-        let g1 = Shape::Group(Group::new(
-            Some(Matrix4::rotation_y(PI / 2.0)),
-            None,
-            vec![],
-            None,
-        ));
-        let g2 = Shape::Group(Group::new(
-            Some(Matrix4::scaling(2., 2., 2.)),
-            None,
-            vec![],
-            None,
-        ));
+        let g1 = Shape::Group(Group::new(Some(Matrix4::rotation_y(PI / 2.0)), None));
+        let g2 = Shape::Group(Group::new(Some(Matrix4::scaling(2., 2., 2.)), None));
         let s = Shape::Sphere(Sphere::new(
             Some(Matrix4::translation(5., 0., 0.)),
-            None,
             None,
             None,
             None,
