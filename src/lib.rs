@@ -1,7 +1,7 @@
 extern crate approx;
 extern crate nalgebra as na;
 extern crate ulid;
-
+extern crate vec_tree;
 pub mod camera;
 pub mod canvas;
 pub mod color;

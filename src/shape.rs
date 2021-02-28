@@ -1,7 +1,7 @@
 use crate::{
-    cone::Cone, cube::Cube, cylinder::Cylinder, epsilon::EPSILON, intersection::Intersection,
-    material::Material, matrix::CGMatrix, plane::Plane, ray::Ray, sphere::Sphere,
-    tuple::TupleOperation,
+    cone::Cone, cube::Cube, cylinder::Cylinder, epsilon::EPSILON, group::Group,
+    intersection::Intersection, material::Material, matrix::CGMatrix, plane::Plane, ray::Ray,
+    sphere::Sphere, tuple::TupleOperation,
 };
 use na::{Matrix4, Vector4};
 use std::mem::swap;
@@ -14,6 +14,7 @@ pub enum Shape {
     Cube(Cube),
     Cylinder(Cylinder),
     Cone(Cone),
+    Group(Group),
 }
 
 impl PartialEq for Shape {
@@ -24,6 +25,7 @@ impl PartialEq for Shape {
             (Shape::Cube(x), Shape::Cube(y)) => x.id == y.id,
             (Shape::Cylinder(x), Shape::Cylinder(y)) => x.id == y.id,
             (Shape::Cone(x), Shape::Cone(y)) => x.id == y.id,
+            (Shape::Group(x), Shape::Group(y)) => x.id == y.id,
             _ => false,
         }
     }
@@ -92,6 +94,7 @@ impl Shape {
                 x.material = material.clone();
                 Shape::Cone(x.clone())
             }
+            Shape::Group(x) => Shape::Group(x.clone()),
         }
     }
 
@@ -153,12 +156,13 @@ impl Shape {
                     )
                 }
             }
+            Shape::Group(_) => Vector4::vector(0., 0., 0.),
         }
     }
 
     pub fn local_intersect(&self, ray: &Ray) -> Vec<Intersection> {
         match self {
-            Shape::Plane(x) => {
+            Shape::Plane(_) => {
                 if ray.direction.y.abs() < EPSILON {
                     return vec![];
                 }
@@ -166,7 +170,7 @@ impl Shape {
                 let intersection = Intersection::new(t, &self);
                 vec![intersection]
             }
-            Shape::Sphere(x) => {
+            Shape::Sphere(_) => {
                 let sphere_to_ray = ray.origin - Vector4::point(0.0, 0.0, 0.0);
                 let a = ray.direction.dot(&ray.direction);
                 let b = 2.0 * ray.direction.dot(&sphere_to_ray);
@@ -182,7 +186,7 @@ impl Shape {
                 let i2 = Intersection::new(t2, &self);
                 vec![i1, i2]
             }
-            Shape::Cube(x) => {
+            Shape::Cube(_) => {
                 let (xtmin, xtmax) = Self::check_cube_axis(ray.origin.x, ray.direction.x);
                 let (ytmin, ytmax) = Self::check_cube_axis(ray.origin.y, ray.direction.y);
                 let (ztmin, ztmax) = Self::check_cube_axis(ray.origin.z, ray.direction.z);
@@ -276,6 +280,16 @@ impl Shape {
                 .concat();
                 xs
             }
+            Shape::Group(x) => {
+                let mut intersections = x
+                    .children
+                    .iter()
+                    .map(|s| s.intersect_group(ray, x.transformation))
+                    .flatten()
+                    .collect::<Vec<_>>();
+                intersections.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
+                intersections
+            }
         }
     }
 
@@ -298,6 +312,10 @@ impl Shape {
                 self.local_intersect(&inv_ray)
             }
             Shape::Cone(x) => {
+                let inv_ray = ray.inv_transform(x.transformation);
+                self.local_intersect(&inv_ray)
+            }
+            Shape::Group(x) => {
                 let inv_ray = ray.inv_transform(x.transformation);
                 self.local_intersect(&inv_ray)
             }
@@ -326,8 +344,13 @@ impl Shape {
                 let inv_ray = ray.inv_transform(transformation * x.transformation);
                 self.local_intersect(&inv_ray)
             }
+            Shape::Group(x) => {
+                let inv_ray = ray.inv_transform(transformation * x.transformation);
+                self.local_intersect(&inv_ray)
+            }
         }
     }
+
     //Helper for cube
     fn check_cube_axis(origin: f32, direction: f32) -> (f32, f32) {
         let t0: f32;
@@ -390,42 +413,45 @@ impl Shape {
         intersections
     }
 
-    pub fn world_to_object(&self, point: Vector4<f32>) -> Vector4<f32> {
+    pub fn world_to_object(&self, mut point: Vector4<f32>) -> Vector4<f32> {
         match self {
             Shape::Plane(x) => {
+                let mut pt = point;
                 if x.parent.is_some() {
-                    x.transformation * point
-                } else {
-                    point
+                    pt = self.world_to_object(pt);
                 }
+                x.transformation.try_inverse().unwrap() * pt
             }
             Shape::Sphere(x) => {
+                let mut pt = point;
                 if x.parent.is_some() {
-                    x.transformation * point
-                } else {
-                    point
+                    pt = self.world_to_object(pt);
                 }
+                x.transformation.try_inverse().unwrap() * pt
             }
             Shape::Cube(x) => {
                 if x.parent.is_some() {
-                    x.transformation * point
-                } else {
-                    point
+                    point = self.world_to_object(point);
                 }
+                x.transformation.try_inverse().unwrap() * point
             }
             Shape::Cylinder(x) => {
                 if x.parent.is_some() {
-                    x.transformation * point
-                } else {
-                    point
+                    point = self.world_to_object(point);
                 }
+                x.transformation.try_inverse().unwrap() * point
             }
             Shape::Cone(x) => {
                 if x.parent.is_some() {
-                    x.transformation * point
-                } else {
-                    point
+                    point = self.world_to_object(point);
                 }
+                x.transformation.try_inverse().unwrap() * point
+            }
+            Shape::Group(x) => {
+                if x.parent.is_some() {
+                    point = self.world_to_object(point);
+                }
+                x.transformation.try_inverse().unwrap() * point
             }
         }
     }
@@ -437,6 +463,29 @@ impl Shape {
             Shape::Cube(x) => &x.material,
             Shape::Cylinder(x) => &x.material,
             Shape::Cone(x) => &x.material,
+            Shape::Group(x) => &x.material,
+        }
+    }
+
+    pub fn id(&self) -> String {
+        match self {
+            Shape::Plane(x) => x.id.clone(),
+            Shape::Sphere(x) => x.id.clone(),
+            Shape::Cube(x) => x.id.clone(),
+            Shape::Cylinder(x) => x.id.clone(),
+            Shape::Cone(x) => x.id.clone(),
+            Shape::Group(x) => x.id.clone(),
+        }
+    }
+
+    pub fn transformation(&self) -> Matrix4<f32> {
+        match self {
+            Shape::Plane(x) => x.transformation.clone(),
+            Shape::Sphere(x) => x.transformation.clone(),
+            Shape::Cube(x) => x.transformation.clone(),
+            Shape::Cylinder(x) => x.transformation.clone(),
+            Shape::Cone(x) => x.transformation.clone(),
+            Shape::Group(x) => x.transformation.clone(),
         }
     }
 
@@ -447,6 +496,7 @@ impl Shape {
             Shape::Cube(x) => x.parent.clone(),
             Shape::Cylinder(x) => x.parent.clone(),
             Shape::Cone(x) => x.parent.clone(),
+            Shape::Group(x) => x.parent.clone(),
         }
     }
 
@@ -457,17 +507,10 @@ impl Shape {
             Shape::Cube(x) => x.parent = Some(id),
             Shape::Cylinder(x) => x.parent = Some(id),
             Shape::Cone(x) => x.parent = Some(id),
+            Shape::Group(x) => x.parent = Some(id),
         }
     }
-    pub fn set_shape(&mut self, id: String) {
-        match self {
-            Shape::Plane(x) => x.parent = Some(id),
-            Shape::Sphere(x) => x.parent = Some(id),
-            Shape::Cube(x) => x.parent = Some(id),
-            Shape::Cylinder(x) => x.parent = Some(id),
-            Shape::Cone(x) => x.parent = Some(id),
-        }
-    }
+
     pub fn get_transformed_shape(&self, transformation: Matrix4<f32>) -> Self {
         match self {
             Shape::Plane(x) => {
@@ -495,6 +538,11 @@ impl Shape {
                 y.transformation = transformation;
                 Shape::Cone(y)
             }
+            Shape::Group(x) => {
+                let mut y = x.clone();
+                y.transformation = transformation;
+                Shape::Group(y)
+            }
         }
     }
 
@@ -513,6 +561,9 @@ impl Shape {
                 x.transformation = transformation;
             }
             Shape::Cone(x) => {
+                x.transformation = transformation;
+            }
+            Shape::Group(x) => {
                 x.transformation = transformation;
             }
         }
@@ -545,6 +596,12 @@ impl Shape {
     pub fn cone(&self) -> Option<&Cone> {
         match self {
             Shape::Cone(x) => Some(x),
+            _ => None,
+        }
+    }
+    pub fn group(&self) -> Option<&Group> {
+        match self {
+            Shape::Group(x) => Some(x),
             _ => None,
         }
     }
