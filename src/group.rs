@@ -82,6 +82,13 @@ impl Scene {
         intersections
     }
 
+    pub fn normal(&self, shape_index: Index, world_point: Vector4<f32>) -> Vector4<f32> {
+        let local_point = self.world_to_object(shape_index, world_point);
+        let shape = self.get_shape_by_index(shape_index).unwrap();
+        let local_nomral = shape.normal(local_point);
+        self.normal_to_world(shape_index, local_nomral)
+    }
+
     pub fn world_to_object(&self, shape_index: Index, point: Vector4<f32>) -> Vector4<f32> {
         let shape = self.get_shape_by_index(shape_index);
         let inv_op = shape.unwrap().transformation().try_inverse();
@@ -276,6 +283,29 @@ mod tests {
                 3.0_f32.sqrt() / 3.0,
             ),
         );
+        assert_relative_eq!(
+            n,
+            Vector4::vector(0.2857, 0.4286, -0.8571),
+            epsilon = EPSILON * 10.
+        )
+    }
+
+    #[test]
+    fn finding_normal_on_child() {
+        let g1 = Shape::Group(Group::new(Some(Matrix4::rotation_y(PI / 2.0)), None));
+        let g2 = Shape::Group(Group::new(Some(Matrix4::scaling(1., 2., 3.)), None));
+        let s = Shape::Sphere(Sphere::new(
+            Some(Matrix4::translation(5., 0., 0.)),
+            None,
+            None,
+            None,
+        ));
+        let mut tree = VecTree::new();
+        let g1n = tree.insert_root(g1.id());
+        let g2n = tree.insert(g2.id(), g1n);
+        let sn = tree.insert(s.id(), g2n);
+        let scene = Scene::from_shapes(tree, vec![g1.clone(), g2.clone(), s.clone()]);
+        let n = scene.normal(sn, Vector4::point(1.7321, 1.1547, -5.5774));
         assert_relative_eq!(
             n,
             Vector4::point(0.2857, 0.4286, -0.8571),
