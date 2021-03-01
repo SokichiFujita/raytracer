@@ -92,6 +92,18 @@ impl Scene {
             None => inv * point,
         }
     }
+
+    pub fn normal_to_world(&self, shape_index: Index, normal: Vector4<f32>) -> Vector4<f32> {
+        let shape = self.get_shape_by_index(shape_index).unwrap();
+        let mut normal = shape.transformation().try_inverse().unwrap().transpose() * normal;
+        normal.w = 0.;
+        normal = normal.normalize();
+        let parent = self.tree.parent(shape_index);
+        match parent {
+            Some(parent_index) => self.normal_to_world(parent_index, normal),
+            None => normal,
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -239,5 +251,35 @@ mod tests {
         let scene = Scene::from_shapes(tree, vec![g1.clone(), g2.clone(), s.clone()]);
         let p = scene.world_to_object(sn, Vector4::point(-2., 0., -10.));
         assert_relative_eq!(p, Vector4::point(0., 0., -1.), epsilon = EPSILON)
+    }
+
+    #[test]
+    fn converting_normal_from_object_to_world_space() {
+        let g1 = Shape::Group(Group::new(Some(Matrix4::rotation_y(PI / 2.0)), None));
+        let g2 = Shape::Group(Group::new(Some(Matrix4::scaling(1., 2., 3.)), None));
+        let s = Shape::Sphere(Sphere::new(
+            Some(Matrix4::translation(5., 0., 0.)),
+            None,
+            None,
+            None,
+        ));
+        let mut tree = VecTree::new();
+        let g1n = tree.insert_root(g1.id());
+        let g2n = tree.insert(g2.id(), g1n);
+        let sn = tree.insert(s.id(), g2n);
+        let scene = Scene::from_shapes(tree, vec![g1.clone(), g2.clone(), s.clone()]);
+        let n = scene.normal_to_world(
+            sn,
+            Vector4::point(
+                3.0_f32.sqrt() / 3.0,
+                3.0_f32.sqrt() / 3.0,
+                3.0_f32.sqrt() / 3.0,
+            ),
+        );
+        assert_relative_eq!(
+            n,
+            Vector4::point(0.2857, 0.4286, -0.8571),
+            epsilon = EPSILON * 10.
+        )
     }
 }
