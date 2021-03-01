@@ -98,11 +98,22 @@ impl Shape {
 
     pub fn normal(&self, point: Vector4<f32>) -> Vector4<f32> {
         match self {
-            Shape::Plane(x) => {
-                x.transformation.try_inverse().unwrap() * Vector4::vector(0.0, 1.0, 0.0)
+            Shape::Plane(x) => self.local_normal(x.transformation.try_inverse().unwrap() * point),
+            Shape::Sphere(x) => self.local_normal(x.transformation.try_inverse().unwrap() * point),
+            Shape::Cube(x) => self.local_normal(x.transformation.try_inverse().unwrap() * point),
+            Shape::Cylinder(x) => {
+                self.local_normal(x.transformation.try_inverse().unwrap() * point)
             }
+            Shape::Cone(x) => self.local_normal(x.transformation.try_inverse().unwrap() * point),
+            Shape::Group(_) => Vector4::vector(0., 0., 0.),
+        }
+    }
+
+    pub fn local_normal(&self, local_point: Vector4<f32>) -> Vector4<f32> {
+        match self {
+            Shape::Plane(x) => Vector4::vector(0.0, 1.0, 0.0),
             Shape::Sphere(x) => {
-                let point_on_shape = x.transformation.try_inverse().unwrap() * point;
+                let point_on_shape = local_point;
                 let normal_at_local = point_on_shape - Vector4::vector(0.0, 0.0, 0.0);
                 let normal_at_world =
                     x.transformation.try_inverse().unwrap().transpose() * normal_at_local;
@@ -110,13 +121,13 @@ impl Shape {
                 Vector4::vector(normal_at_world.x, normal_at_world.y, normal_at_world.z).normalize()
             }
             Shape::Cube(x) => {
-                let point_on_shape = x.transformation.try_inverse().unwrap() * point;
+                let point_on_shape = local_point;
                 let maxc = point_on_shape
                     .x
                     .abs()
                     .max(point_on_shape.y.abs())
                     .max(point_on_shape.z.abs());
-                if maxc == point.x.abs() {
+                if maxc == point_on_shape.x.abs() {
                     Vector4::vector(point_on_shape.x, 0., 0.)
                 } else if maxc == point_on_shape.y.abs() {
                     Vector4::vector(0., point_on_shape.y, 0.)
@@ -125,7 +136,7 @@ impl Shape {
                 }
             }
             Shape::Cylinder(x) => {
-                let point_on_shape = x.transformation.try_inverse().unwrap() * point;
+                let point_on_shape = local_point;
                 let dist = point_on_shape.x.powi(2) + point_on_shape.z.powi(2);
                 if dist < 1.0 && point_on_shape.y >= (x.max - EPSILON) {
                     Vector4::vector(0.0, 1.0, 0.0)
@@ -136,7 +147,7 @@ impl Shape {
                 }
             }
             Shape::Cone(x) => {
-                let point_on_shape = x.transformation.try_inverse().unwrap() * point;
+                let point_on_shape = local_point;
                 let dist = point_on_shape.x.powi(2) + point_on_shape.z.powi(2);
                 if dist < x.max.powi(2) && point_on_shape.y >= x.max - EPSILON {
                     Vector4::vector(0.0, 1.0, 0.0)

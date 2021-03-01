@@ -85,7 +85,7 @@ impl Scene {
     pub fn normal(&self, shape_index: Index, world_point: Vector4<f32>) -> Vector4<f32> {
         let local_point = self.world_to_object(shape_index, world_point);
         let shape = self.get_shape_by_index(shape_index).unwrap();
-        let local_nomral = shape.normal(local_point);
+        let local_nomral = shape.local_normal(local_point);
         self.normal_to_world(shape_index, local_nomral)
     }
 
@@ -308,7 +308,7 @@ mod tests {
         let n = scene.normal(sn, Vector4::point(1.7321, 1.1547, -5.5774));
         assert_relative_eq!(
             n,
-            Vector4::point(0.2857, 0.4286, -0.8571),
+            Vector4::vector(0.2857, 0.4286, -0.8571),
             epsilon = EPSILON * 10.
         )
     }
