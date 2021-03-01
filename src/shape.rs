@@ -111,7 +111,7 @@ impl Shape {
 
     pub fn local_normal(&self, local_point: Vector4<f32>) -> Vector4<f32> {
         match self {
-            Shape::Plane(x) => Vector4::vector(0.0, 1.0, 0.0),
+            Shape::Plane(_) => Vector4::vector(0.0, 1.0, 0.0),
             Shape::Sphere(x) => {
                 let point_on_shape = local_point;
                 let normal_at_local = point_on_shape - Vector4::vector(0.0, 0.0, 0.0);
@@ -120,7 +120,7 @@ impl Shape {
 
                 Vector4::vector(normal_at_world.x, normal_at_world.y, normal_at_world.z).normalize()
             }
-            Shape::Cube(x) => {
+            Shape::Cube(_) => {
                 let point_on_shape = local_point;
                 let maxc = point_on_shape
                     .x
@@ -289,7 +289,7 @@ impl Shape {
                 .concat();
                 xs
             }
-            Shape::Group(x) => vec![],
+            Shape::Group(_x) => vec![],
         }
     }
 
