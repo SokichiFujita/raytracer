@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{intersection::Intersection, material::Material, ray::Ray, shape::Shape};
+use crate::{intersection::Intersection, material::Material, matrix, ray::Ray, shape::Shape};
 use na::Matrix4;
 use nalgebra::Vector4;
 use vec_tree::{Index, VecTree};
@@ -109,6 +109,68 @@ impl Scene {
         match parent {
             Some(parent_index) => self.normal_to_world(parent_index, normal),
             None => normal,
+        }
+    }
+
+    // to simplify the logic arguments receive list of group
+    pub fn to_shapes(&self, group_indices: Vec<Index>) -> Vec<Shape> {
+        let mut shapes = vec![];
+        // let root = self.tree.get_root_index().unwrap();
+        group_indices.iter().for_each(|x| {
+            let group_transformation = self.get_shape_by_index(*x).unwrap().transformation();
+            let children_node = self.tree.children(*x).for_each(|node| {
+                let mut child = self.get_shape_by_index(node).unwrap().clone();
+                child.set_transform(group_transformation * child.transformation());
+                shapes.push(child);
+            });
+        });
+        shapes
+    }
+
+    pub fn to_all_shapes(&self) -> Vec<Shape> {
+        let tree = self.tree.clone();
+        let root_node = tree.get_root_index().unwrap();
+        let shape = self.get_shape_by_index(root_node).unwrap();
+        let mut all = vec![];
+        all.push(shape.clone());
+        self.fold_transformation(root_node, &mut all);
+        all
+    }
+
+    pub fn fold_transformation(&self, node_index: Index, all: &mut Vec<Shape>) {
+        let node = self.get_shape_by_index(node_index).unwrap();
+        match node {
+            Shape::Group(x) => {
+                let group_transformation = self
+                    .get_shape_by_index(node_index)
+                    .unwrap()
+                    .transformation();
+                self.tree.children(node_index).for_each(|child_index| {
+                    let child = self.get_shape_by_index(child_index);
+                    match child {
+                        Some(x) => {
+                            let mut shape = x.clone();
+                            shape.set_transform(group_transformation * shape.transformation());
+                            all.push(shape);
+                            self.fold_transformation(child_index, all)
+                        }
+                        None => {}
+                    }
+                });
+            }
+            (_) => {
+                self.tree.children(node_index).for_each(|child_index| {
+                    let child = self.get_shape_by_index(child_index);
+                    match child {
+                        Some(x) => {
+                            let shape = x.clone();
+                            all.push(shape);
+                            self.fold_transformation(child_index, all)
+                        }
+                        None => {}
+                    }
+                });
+            }
         }
     }
 }

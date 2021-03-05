@@ -12,6 +12,7 @@ use raytracer::{
     cone::Cone,
     cube::Cube,
     cylinder::Cylinder,
+    group::{Group, Scene},
     intersection::*,
     material::Material,
     matrix::CGMatrix,
@@ -25,6 +26,7 @@ use raytracer::{
     tuple::TupleOperation,
     world::World,
 };
+use vec_tree::VecTree;
 fn main() {
     ch5();
     ch6();
@@ -35,6 +37,7 @@ fn main() {
     ch12();
     ch13_cylinder();
     ch13_cone();
+    ch14();
 }
 
 fn ch5() {
@@ -773,4 +776,121 @@ fn ch13_cone() {
 
     let ppm = canvas.to_ppm();
     ppm.out("ch13_cone");
+}
+
+fn ch14() {
+    let floor_material = Material::new(
+        Some(Color::rgb(1.0, 0.9, 0.9)),
+        None,
+        None,
+        Some(0.0),
+        Some(0.0),
+        Some(0.7),
+        Some(0.0),
+        Some(0.0),
+        Some(Pattern::Checker(Checker::new(
+            (1.0, 1.0, 1.0),
+            (0.0, 0.0, 0.0),
+            Matrix4::<f32>::scaling(0.5, 0.5, 0.5),
+        ))),
+    );
+
+    let floor = Shape::Sphere(Sphere::new(
+        Some(Matrix4::scaling(10.0, 0.01, 10.0)),
+        Some(floor_material.clone()),
+        None,
+        None,
+    ));
+
+    let c1 = Shape::Cube(Cube::new(
+        Some(Matrix4::translation(-3.0, 1.5, 1.0)),
+        Some(Material::new(
+            None,
+            None,
+            None,
+            None,
+            None,
+            Some(0.4),
+            None,
+            None,
+            None,
+        )),
+    ));
+
+    let c2 = Shape::Cube(Cube::new(
+        Some(Matrix4::translation(1.0, 1.5, 1.0)),
+        Some(Material::new(
+            Some(Color::rgb(0.8, 0.1, 0.1)),
+            None,
+            None,
+            None,
+            None,
+            Some(0.4),
+            None,
+            None,
+            None,
+        )),
+    ));
+    let c3 = Shape::Cube(Cube::new(
+        Some(Matrix4::translation(2.0, 1., 0.5)),
+        Some(Material::new(
+            Some(Color::rgb(0.1, 0.1, 0.9)),
+            None,
+            None,
+            None,
+            None,
+            Some(0.4),
+            None,
+            None,
+            None,
+        )),
+    ));
+
+    let g = Shape::Group(Group::new(
+        Some(
+            Matrix4::translation(0.3, 1.0, 1.0)
+                * Matrix4::scaling(0.4, 0.4, 0.4)
+                * Matrix4::rotation_y(0.45)
+                * Matrix4::rotation_x(0.45)
+                * Matrix4::rotation_z(0.45),
+        ),
+        None,
+    ));
+
+    let mut tree = VecTree::new();
+    let fln = tree.insert_root(floor.id());
+    let gn = tree.insert(g.id(), fln);
+    let c1n = tree.insert(c1.id(), gn);
+    let c2n = tree.insert(c2.id(), gn);
+    let c3n = tree.insert(c3.id(), fln);
+
+    let scene = Scene::from_shapes(
+        tree,
+        vec![floor.clone(), g.clone(), c1.clone(), c2.clone(), c3.clone()],
+    );
+    let shapes = scene.to_all_shapes();
+
+    let world = World::new(
+        Some(PointLight::new(
+            Vector4::point(-10.0, 10.0, -10.0),
+            Color::rgb(1.0, 1.0, 1.0),
+        )),
+        shapes,
+    );
+
+    let ratio = 1.0;
+    let camera = Camera::new(
+        200.0 * ratio,
+        150.0 * ratio,
+        PI / 3.0,
+        Vector4::point(0.0, 1.0, -5.0).view_transformation(
+            &Vector4::point(0.0, 0.5, 0.0),
+            &Vector4::vector(0.0, 0.5, 0.0),
+        ),
+    );
+
+    let canvas = camera.render(&world);
+
+    let ppm = canvas.to_ppm();
+    ppm.out("ch14");
 }
