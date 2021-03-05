@@ -112,22 +112,7 @@ impl Scene {
         }
     }
 
-    // to simplify the logic arguments receive list of group
-    pub fn to_shapes(&self, group_indices: Vec<Index>) -> Vec<Shape> {
-        let mut shapes = vec![];
-        // let root = self.tree.get_root_index().unwrap();
-        group_indices.iter().for_each(|x| {
-            let group_transformation = self.get_shape_by_index(*x).unwrap().transformation();
-            let children_node = self.tree.children(*x).for_each(|node| {
-                let mut child = self.get_shape_by_index(node).unwrap().clone();
-                child.set_transform(group_transformation * child.transformation());
-                shapes.push(child);
-            });
-        });
-        shapes
-    }
-
-    pub fn to_all_shapes(&self) -> Vec<Shape> {
+    pub fn to_transformed_shapes(&self) -> Vec<Shape> {
         let tree = self.tree.clone();
         let root_node = tree.get_root_index().unwrap();
         let shape = self.get_shape_by_index(root_node).unwrap();

@@ -868,7 +868,7 @@ fn ch14() {
         tree,
         vec![floor.clone(), g.clone(), c1.clone(), c2.clone(), c3.clone()],
     );
-    let shapes = scene.to_all_shapes();
+    let shapes = scene.to_transformed_shapes();
 
     let world = World::new(
         Some(PointLight::new(
