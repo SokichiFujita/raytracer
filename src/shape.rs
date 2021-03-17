@@ -1,10 +1,10 @@
 use crate::{
-    cone::Cone, cube::Cube, cylinder::Cylinder, epsilon::EPSILON, group::Group,
+    bound::Bound, cone::Cone, cube::Cube, cylinder::Cylinder, epsilon::EPSILON, group::Group,
     intersection::Intersection, material::Material, matrix::CGMatrix, plane::Plane, ray::Ray,
-    sphere::Sphere, tuple::TupleOperation,
+    sphere::Sphere, triangle::Triangle, tuple::TupleOperation,
 };
 use na::{Matrix4, Vector4};
-use std::mem::swap;
+use std::{f32::INFINITY, mem::swap};
 use ulid::Ulid;
 
 #[derive(Clone, Debug)]
@@ -15,6 +15,7 @@ pub enum Shape {
     Cylinder(Cylinder),
     Cone(Cone),
     Group(Group),
+    Triangle(Triangle),
 }
 
 impl PartialEq for Shape {
@@ -26,6 +27,7 @@ impl PartialEq for Shape {
             (Shape::Cylinder(x), Shape::Cylinder(y)) => x.id == y.id,
             (Shape::Cone(x), Shape::Cone(y)) => x.id == y.id,
             (Shape::Group(x), Shape::Group(y)) => x.id == y.id,
+            (Shape::Triangle(x), Shape::Triangle(y)) => x.id == y.id,
             _ => false,
         }
     }
@@ -92,6 +94,10 @@ impl Shape {
                 x.material = material.clone();
                 Shape::Cone(x.clone())
             }
+            Shape::Triangle(x) => {
+                x.material = material.clone();
+                Shape::Triangle(x.clone())
+            }
             Shape::Group(x) => Shape::Group(x.clone()),
         }
     }
@@ -105,6 +111,9 @@ impl Shape {
                 self.local_normal(x.transformation.try_inverse().unwrap() * point)
             }
             Shape::Cone(x) => self.local_normal(x.transformation.try_inverse().unwrap() * point),
+            Shape::Triangle(x) => {
+                self.local_normal(x.transformation.try_inverse().unwrap() * point)
+            }
             Shape::Group(_) => Vector4::vector(0., 0., 0.),
         }
     }
@@ -165,6 +174,7 @@ impl Shape {
                     )
                 }
             }
+            Shape::Triangle(x) => x.normal,
             Shape::Group(_) => Vector4::vector(0., 0., 0.),
         }
     }
@@ -289,6 +299,30 @@ impl Shape {
                 .concat();
                 xs
             }
+            Shape::Triangle(x) => {
+                let dir_cross_e2 = ray.direction.cross4(&x.e2);
+                let det = x.e1.dot(&dir_cross_e2);
+                let a = approx::relative_eq!(det.abs(), 0., epsilon = EPSILON);
+                if a {
+                    return vec![];
+                }
+                let f = 1.0 / det;
+                let p1_to_origin = ray.origin - x.p1;
+                let u = f * p1_to_origin.dot(&dir_cross_e2);
+                if u < 0.0 || u > 1.0 {
+                    return vec![];
+                }
+
+                let origin_cross_e1 = p1_to_origin.cross4(&x.e1);
+                let v = f * ray.direction.dot(&origin_cross_e1);
+                if v < 0.0 || (u + v) > 1.0 {
+                    return vec![];
+                }
+                let t = f * x.e2.dot(&origin_cross_e1);
+
+                let xs = Intersection::new(t, &self);
+                return vec![xs];
+            }
             Shape::Group(_x) => vec![],
         }
     }
@@ -312,6 +346,10 @@ impl Shape {
                 self.local_intersect(&inv_ray)
             }
             Shape::Cone(x) => {
+                let inv_ray = ray.inv_transform(x.transformation);
+                self.local_intersect(&inv_ray)
+            }
+            Shape::Triangle(x) => {
                 let inv_ray = ray.inv_transform(x.transformation);
                 self.local_intersect(&inv_ray)
             }
@@ -341,6 +379,10 @@ impl Shape {
                 self.local_intersect(&inv_ray)
             }
             Shape::Cone(x) => {
+                let inv_ray = ray.inv_transform(transformation * x.transformation);
+                self.local_intersect(&inv_ray)
+            }
+            Shape::Triangle(x) => {
                 let inv_ray = ray.inv_transform(transformation * x.transformation);
                 self.local_intersect(&inv_ray)
             }
@@ -420,6 +462,7 @@ impl Shape {
             Shape::Cube(x) => &x.material,
             Shape::Cylinder(x) => &x.material,
             Shape::Cone(x) => &x.material,
+            Shape::Triangle(x) => &x.material,
             Shape::Group(x) => &x.material,
         }
     }
@@ -431,6 +474,7 @@ impl Shape {
             Shape::Cube(x) => x.id.clone(),
             Shape::Cylinder(x) => x.id.clone(),
             Shape::Cone(x) => x.id.clone(),
+            Shape::Triangle(x) => x.id.clone(),
             Shape::Group(x) => x.id.clone(),
         }
     }
@@ -442,6 +486,7 @@ impl Shape {
             Shape::Cube(x) => x.transformation.clone(),
             Shape::Cylinder(x) => x.transformation.clone(),
             Shape::Cone(x) => x.transformation.clone(),
+            Shape::Triangle(x) => x.transformation.clone(),
             Shape::Group(x) => x.transformation.clone(),
         }
     }
@@ -473,6 +518,11 @@ impl Shape {
                 y.transformation = transformation;
                 Shape::Cone(y)
             }
+            Shape::Triangle(x) => {
+                let mut y = x.clone();
+                y.transformation = transformation;
+                Shape::Triangle(y)
+            }
             Shape::Group(x) => {
                 let mut y = x.clone();
                 y.transformation = transformation;
@@ -496,6 +546,9 @@ impl Shape {
                 x.transformation = transformation;
             }
             Shape::Cone(x) => {
+                x.transformation = transformation;
+            }
+            Shape::Triangle(x) => {
                 x.transformation = transformation;
             }
             Shape::Group(x) => {
@@ -534,10 +587,31 @@ impl Shape {
             _ => None,
         }
     }
+    pub fn triangle(&self) -> Option<&Triangle> {
+        match self {
+            Shape::Triangle(x) => Some(x),
+            _ => None,
+        }
+    }
     pub fn group(&self) -> Option<&Group> {
         match self {
             Shape::Group(x) => Some(x),
             _ => None,
+        }
+    }
+
+    // return un-transformed bound
+    pub fn bound(&self) -> Bound {
+        match self {
+            Shape::Plane(_) => {
+                Bound::new_from_tuple((-INFINITY, 0., -INFINITY), (INFINITY, 0., INFINITY))
+            }
+            Shape::Sphere(_) => Bound::new_from_tuple((-1., -1., -1.), (1., 1., 1.)),
+            Shape::Cube(_) => Bound::new_from_tuple((-1., -1., -1.), (1., 1., 1.)),
+            Shape::Cylinder(x) => Bound::new_from_tuple((-1., x.min, -1.), (1., x.max, 1.)),
+            Shape::Cone(x) => Bound::new_from_tuple((-1., x.min, -1.), (1., x.max, 1.)),
+            Shape::Triangle(x) => Bound::new_from_tuple((-1., -1., -1.), (1., 1., 1.)),
+            Shape::Group(_) => Bound::new_from_tuple((-1., -1., -1.), (1., 1., 1.)),
         }
     }
 }
