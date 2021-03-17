@@ -149,4 +149,19 @@ mod tests {
         let xs = t.local_intersect(&ray);
         assert_eq!(xs.len(), 0);
     }
+
+    #[test]
+    fn ray_strikes_triangle() {
+        let t = Shape::Triangle(Triangle::new(
+            None,
+            None,
+            Vector4::point(0., 1., 0.),
+            Vector4::point(-1., 0., 0.),
+            Vector4::point(1., 0., 0.),
+        ));
+        let ray = Ray::new(Vector4::point(0., 0.5, -2.), Vector4::point(0., 0., 1.));
+        let xs = t.local_intersect(&ray);
+        assert_eq!(xs.len(), 1);
+        assert_eq!(xs[0].t, 2.0);
+    }
 }
