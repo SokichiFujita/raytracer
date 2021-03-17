@@ -85,13 +85,14 @@ mod tests {
         let p1 = Vector4::point(0., 1., 0.);
         let p2 = Vector4::point(-1., 0., 0.);
         let p3 = Vector4::point(1., 0., 0.);
-        let t = Triangle::new(None, None, p1, p2, p3);
-        assert_eq!(t.p1, p1);
-        assert_eq!(t.p2, p2);
-        assert_eq!(t.p3, p3);
-        assert_eq!(t.e1, Vector4::vector(-1., -1., 0.));
-        assert_eq!(t.e2, Vector4::vector(1., -1., 0.));
-        assert_eq!(t.normal, Vector4::vector(0., 0., -1.));
+        let t = Shape::Triangle(Triangle::new(None, None, p1, p2, p3));
+        let n1 = t.local_normal(Vector4::point(0., 0.5, 0.));
+        let n2 = t.local_normal(Vector4::point(-0.5, 0.75, 0.));
+        let n3 = t.local_normal(Vector4::point(0.5, 0.25, 0.));
+
+        assert_eq!(t.triangle().unwrap().normal, n1);
+        assert_eq!(t.triangle().unwrap().normal, n2);
+        assert_eq!(t.triangle().unwrap().normal, n3);
     }
 
     #[test]
