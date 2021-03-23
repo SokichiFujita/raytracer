@@ -96,7 +96,7 @@ mod tests {
     }
 
     #[test]
-    fn ray_misses_p1_pe_edge() {
+    fn intersecting_ray_parallel_to_triangle() {
         let t = Shape::Triangle(Triangle::new(
             None,
             None,
@@ -104,7 +104,7 @@ mod tests {
             Vector4::point(-1., 0., 0.),
             Vector4::point(1., 0., 0.),
         ));
-        let ray = Ray::new(Vector4::point(1., 1., -2.), Vector4::point(0., 0., 1.));
+        let ray = Ray::new(Vector4::point(0., -1., -2.), Vector4::point(0., 1., 0.));
         let xs = t.local_intersect(&ray);
         assert_eq!(xs.len(), 0);
     }
