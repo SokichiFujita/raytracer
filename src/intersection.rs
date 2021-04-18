@@ -64,7 +64,11 @@ impl Intersection<'_> {
     ) -> Computations {
         let point = ray.position(self.t);
         let eyev = -1.0 * ray.direction;
-        let normalv_temp = self.shape.normal(point, None);
+        let hit = match all_intersections {
+            None => None,
+            Some(x) => Some(x.get(0).unwrap().clone()),
+        };
+        let normalv_temp = self.shape.normal(point, hit);
 
         //negating
         let angle_of_normal_and_eye = normalv_temp.dot(&eyev);

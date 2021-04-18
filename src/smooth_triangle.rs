@@ -164,4 +164,25 @@ mod tests {
         let n = tri.normal(Vector4::point(0., 0., 0.), Some(i));
         assert_relative_eq!(n, Vector4::vector(-0.5547, 0.83205, 0.0), epsilon = EPSILON);
     }
+
+    #[test]
+    fn preparing_normal_on_smooth_triangle() {
+        let p1 = Vector4::point(0., 1., 0.);
+        let p2 = Vector4::point(-1., 0., 0.);
+        let p3 = Vector4::point(1., 0., 0.);
+        let n1 = Vector4::vector(0., 1., 0.);
+        let n2 = Vector4::vector(-1., 0., 0.);
+        let n3 = Vector4::vector(1., 0., 0.);
+        let tri = Shape::SmoothTriangle(SmoothTriangle::new_with_n(
+            None, None, p1, p2, p3, n1, n2, n3,
+        ));
+        let i = Intersection::new_with_uv(1., &tri, 0.45, 0.25);
+        let ray = Ray::new(Vector4::point(-0.2, 0.3, -2.), Vector4::vector(0., 0., 1.));
+        let computaitons = i.prepare_computation(&ray, Some(&vec![i]));
+        assert_relative_eq!(
+            computaitons.normalv,
+            Vector4::vector(-0.5547, 0.83205, 0.0),
+            epsilon = EPSILON
+        );
+    }
 }
