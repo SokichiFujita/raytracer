@@ -2,8 +2,8 @@ extern crate approx;
 extern crate ulid;
 
 use crate::{
-    group::Group, group::Scene, matrix::CGMatrix, shape::Shape, triangle::Triangle,
-    tuple::TupleOperation,
+    group::Group, group::Scene, matrix::CGMatrix, shape::Shape, smooth_triangle::SmoothTriangle,
+    triangle::Triangle, tuple::TupleOperation,
 };
 use na::{Matrix4, Vector4};
 use std::fs::File;
@@ -74,7 +74,7 @@ impl Wavefront {
                     self.groups.push(line);
                 }
                 "vn" => {
-                    let tuple = Vector4::point(
+                    let tuple = Vector4::vector(
                         words[1].parse::<f32>().unwrap(),
                         words[2].parse::<f32>().unwrap(),
                         words[3].parse::<f32>().unwrap(),
@@ -108,14 +108,14 @@ impl Wavefront {
                                 let n2 = self.normals[index];
                                 let n3 = self.normals[index + 1];
 
-                                let triangle = Shape::Triangle(Triangle::new_with_n(
+                                let triangle = Shape::SmoothTriangle(SmoothTriangle::new_with_n(
                                     None, None, p1, p2, p3, n1, n2, n3,
                                 ));
                                 tree.insert(triangle.id(), root);
                                 shapes.push(triangle);
                             }
                         } else if l == 3 {
-                            let triangle = Shape::Triangle(Triangle::new_with_n(
+                            let triangle = Shape::SmoothTriangle(SmoothTriangle::new_with_n(
                                 None,
                                 None,
                                 vertices[0],
@@ -147,14 +147,15 @@ impl Wavefront {
                                 let p2 = self.vertices[index];
                                 let p3 = self.vertices[index + 1];
 
-                                let triangle =
-                                    Shape::Triangle(Triangle::new(None, None, p1, p2, p3));
+                                let triangle = Shape::SmoothTriangle(SmoothTriangle::new(
+                                    None, None, p1, p2, p3,
+                                ));
                                 tree.insert(triangle.id(), root);
                                 shapes.push(triangle);
                             }
                         } else if l == 3 {
                             // Create one triangle polygon from 3 vertices
-                            let triangle = Shape::Triangle(Triangle::new(
+                            let triangle = Shape::SmoothTriangle(SmoothTriangle::new(
                                 None,
                                 None,
                                 vertices[0],
@@ -214,16 +215,16 @@ mod tests {
         let i1 = tree.get(nodes[0]).unwrap();
         let s1 = shapes.get(i1).unwrap();
 
-        assert_eq!(s1.triangle().unwrap().p1, w.vertices[1]);
-        assert_eq!(s1.triangle().unwrap().p2, w.vertices[2]);
-        assert_eq!(s1.triangle().unwrap().p3, w.vertices[3]);
+        assert_eq!(s1.smooth_triangle().unwrap().p1, w.vertices[1]);
+        assert_eq!(s1.smooth_triangle().unwrap().p2, w.vertices[2]);
+        assert_eq!(s1.smooth_triangle().unwrap().p3, w.vertices[3]);
 
         let i2 = tree.get(nodes[1]).unwrap();
         let s2 = shapes.get(i2).unwrap();
 
-        assert_eq!(s2.triangle().unwrap().p1, w.vertices[1]);
-        assert_eq!(s2.triangle().unwrap().p2, w.vertices[3]);
-        assert_eq!(s2.triangle().unwrap().p3, w.vertices[4]);
+        assert_eq!(s2.smooth_triangle().unwrap().p1, w.vertices[1]);
+        assert_eq!(s2.smooth_triangle().unwrap().p2, w.vertices[3]);
+        assert_eq!(s2.smooth_triangle().unwrap().p3, w.vertices[4]);
     }
 
     #[test]
@@ -241,23 +242,23 @@ mod tests {
         let i1 = tree.get(nodes[0]).unwrap();
         let s1 = shapes.get(i1).unwrap();
 
-        assert_eq!(s1.triangle().unwrap().p1, w.vertices[1]);
-        assert_eq!(s1.triangle().unwrap().p2, w.vertices[2]);
-        assert_eq!(s1.triangle().unwrap().p3, w.vertices[3]);
+        assert_eq!(s1.smooth_triangle().unwrap().p1, w.vertices[1]);
+        assert_eq!(s1.smooth_triangle().unwrap().p2, w.vertices[2]);
+        assert_eq!(s1.smooth_triangle().unwrap().p3, w.vertices[3]);
 
         let i2 = tree.get(nodes[1]).unwrap();
         let s2 = shapes.get(i2).unwrap();
 
-        assert_eq!(s2.triangle().unwrap().p1, w.vertices[1]);
-        assert_eq!(s2.triangle().unwrap().p2, w.vertices[3]);
-        assert_eq!(s2.triangle().unwrap().p3, w.vertices[4]);
+        assert_eq!(s2.smooth_triangle().unwrap().p1, w.vertices[1]);
+        assert_eq!(s2.smooth_triangle().unwrap().p2, w.vertices[3]);
+        assert_eq!(s2.smooth_triangle().unwrap().p3, w.vertices[4]);
 
         let i3 = tree.get(nodes[2]).unwrap();
         let s3 = shapes.get(i3).unwrap();
 
-        assert_eq!(s3.triangle().unwrap().p1, w.vertices[1]);
-        assert_eq!(s3.triangle().unwrap().p2, w.vertices[4]);
-        assert_eq!(s3.triangle().unwrap().p3, w.vertices[5]);
+        assert_eq!(s3.smooth_triangle().unwrap().p1, w.vertices[1]);
+        assert_eq!(s3.smooth_triangle().unwrap().p2, w.vertices[4]);
+        assert_eq!(s3.smooth_triangle().unwrap().p3, w.vertices[5]);
     }
 
     #[test]
@@ -266,9 +267,9 @@ mod tests {
         let result = w.parse("vertex_normal.obj");
         assert_eq!(result.is_ok(), true);
 
-        assert_eq!(w.normals[1], Vector4::point(0., 0., 1.));
-        assert_eq!(w.normals[2], Vector4::point(0.707, 0., -0.707));
-        assert_eq!(w.normals[3], Vector4::point(1., 2., 3.));
+        assert_eq!(w.normals[1], Vector4::vector(0., 0., 1.));
+        assert_eq!(w.normals[2], Vector4::vector(0.707, 0., -0.707));
+        assert_eq!(w.normals[3], Vector4::vector(1., 2., 3.));
     }
 
     #[test]
@@ -288,18 +289,18 @@ mod tests {
         let i2 = tree.get(nodes[1]).unwrap();
         let s2 = shapes.get(i2).unwrap();
 
-        assert_eq!(s1.triangle().unwrap().p1, w.vertices[1]);
-        assert_eq!(s1.triangle().unwrap().p2, w.vertices[2]);
-        assert_eq!(s1.triangle().unwrap().p3, w.vertices[3]);
-        assert_eq!(s1.triangle().unwrap().n1, w.normals[3]);
-        assert_eq!(s1.triangle().unwrap().n2, w.normals[1]);
-        assert_eq!(s1.triangle().unwrap().n3, w.normals[2]);
+        assert_eq!(s1.smooth_triangle().unwrap().p1, w.vertices[1]);
+        assert_eq!(s1.smooth_triangle().unwrap().p2, w.vertices[2]);
+        assert_eq!(s1.smooth_triangle().unwrap().p3, w.vertices[3]);
+        assert_eq!(s1.smooth_triangle().unwrap().n1, w.normals[3]);
+        assert_eq!(s1.smooth_triangle().unwrap().n2, w.normals[1]);
+        assert_eq!(s1.smooth_triangle().unwrap().n3, w.normals[2]);
 
-        assert_eq!(s2.triangle().unwrap().p1, w.vertices[1]);
-        assert_eq!(s2.triangle().unwrap().p2, w.vertices[2]);
-        assert_eq!(s2.triangle().unwrap().p3, w.vertices[3]);
-        assert_eq!(s2.triangle().unwrap().n1, w.normals[3]);
-        assert_eq!(s2.triangle().unwrap().n2, w.normals[1]);
-        assert_eq!(s2.triangle().unwrap().n3, w.normals[2]);
+        assert_eq!(s2.smooth_triangle().unwrap().p1, w.vertices[1]);
+        assert_eq!(s2.smooth_triangle().unwrap().p2, w.vertices[2]);
+        assert_eq!(s2.smooth_triangle().unwrap().p3, w.vertices[3]);
+        assert_eq!(s2.smooth_triangle().unwrap().n1, w.normals[3]);
+        assert_eq!(s2.smooth_triangle().unwrap().n2, w.normals[1]);
+        assert_eq!(s2.smooth_triangle().unwrap().n3, w.normals[2]);
     }
 }
