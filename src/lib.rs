@@ -22,6 +22,7 @@ pub mod ppm;
 pub mod ray;
 pub mod refractive;
 pub mod shape;
+pub mod smooth_triangle;
 pub mod sphere;
 pub mod triangle;
 pub mod tuple;

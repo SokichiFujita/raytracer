@@ -47,7 +47,7 @@ impl Canvas {
                 let hit = intersections.hit();
                 if hit.is_some() {
                     let point = r.position(hit.unwrap().t);
-                    let normalv = hit.unwrap().shape.normal(point);
+                    let normalv = hit.unwrap().shape.normal(point, None);
                     let eyev = -r.direction;
                     let shape = hit.unwrap().shape;
                     match shape {

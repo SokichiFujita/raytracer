@@ -24,20 +24,22 @@ use raytracer::{
     shape::Shape,
     sphere::Sphere,
     tuple::TupleOperation,
+    wavefront::Wavefront,
     world::World,
 };
 use vec_tree::VecTree;
 fn main() {
-    ch5();
-    ch6();
-    ch7();
-    ch9();
-    ch10();
-    ch11();
-    ch12();
-    ch13_cylinder();
-    ch13_cone();
-    ch14();
+    // ch5();
+    // ch6();
+    // ch7();
+    // ch9();
+    // ch10();
+    // ch11();
+    // ch12();
+    // ch13_cylinder();
+    // ch13_cone();
+    // ch14();
+    ch15();
 }
 
 fn ch5() {
@@ -893,4 +895,37 @@ fn ch14() {
 
     let ppm = canvas.to_ppm();
     ppm.out("ch14");
+}
+
+fn ch15() {
+    let mut w = Wavefront::new_empty();
+    let result = w.parse("teapot.obj");
+    assert_eq!(result.is_ok(), true);
+
+    let t = w.scene.unwrap();
+    let shapes = t.shapes.values().cloned().collect::<Vec<Shape>>();
+
+    let world = World::new(
+        Some(PointLight::new(
+            Vector4::point(-10.0, 10.0, -10.0),
+            Color::rgb(1.0, 1.0, 1.0),
+        )),
+        shapes,
+    );
+
+    let ratio = 1.0;
+    let camera = Camera::new(
+        200.0 * ratio,
+        150.0 * ratio,
+        PI / 3.0,
+        Vector4::point(0.0, 1.0, -10.0).view_transformation(
+            &Vector4::point(0.0, 0.5, 0.0),
+            &Vector4::vector(0.0, 0.5, 0.0),
+        ),
+    );
+
+    let canvas = camera.render(&world);
+
+    let ppm = canvas.to_ppm();
+    ppm.out("ch15");
 }

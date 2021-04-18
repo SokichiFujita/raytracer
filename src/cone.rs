@@ -153,7 +153,7 @@ mod tests {
         ];
         let shape = Shape::Cone(Cone::new_default());
         for (point, normal) in test_sets.into_iter() {
-            assert_relative_eq!(shape.normal(point), normal);
+            assert_relative_eq!(shape.normal(point, None), normal);
         }
     }
 }

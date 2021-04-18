@@ -10,6 +10,8 @@ use crate::tuple::TupleOperation;
 pub struct Intersection<'a> {
     pub t: f32,
     pub shape: &'a Shape,
+    pub u: Option<f32>,
+    pub v: Option<f32>,
 }
 
 impl PartialEq for Intersection<'_> {
@@ -40,7 +42,20 @@ impl Eq for Intersection<'_> {}
 
 impl Intersection<'_> {
     pub fn new<'a>(t: f32, shape: &'a Shape) -> Intersection {
-        Intersection { t, shape }
+        Intersection {
+            t,
+            shape,
+            u: None,
+            v: None,
+        }
+    }
+    pub fn new_with_uv<'a>(t: f32, shape: &'a Shape, u: f32, v: f32) -> Intersection {
+        Intersection {
+            t,
+            shape,
+            u: Some(u),
+            v: Some(v),
+        }
     }
     pub fn prepare_computation(
         &self,
@@ -49,7 +64,7 @@ impl Intersection<'_> {
     ) -> Computations {
         let point = ray.position(self.t);
         let eyev = -1.0 * ray.direction;
-        let normalv_temp = self.shape.normal(point);
+        let normalv_temp = self.shape.normal(point, None);
 
         //negating
         let angle_of_normal_and_eye = normalv_temp.dot(&eyev);

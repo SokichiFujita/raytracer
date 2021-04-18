@@ -1,14 +1,14 @@
 use std::collections::HashMap;
 
-use crate::{intersection::Intersection, material::Material, matrix, ray::Ray, shape::Shape};
+use crate::{intersection::Intersection, material::Material, ray::Ray, shape::Shape};
 use na::Matrix4;
 use nalgebra::Vector4;
 use vec_tree::{Index, VecTree};
 
 #[derive(Clone, Debug)]
 pub struct Scene {
-    tree: VecTree<String>,
-    shapes: HashMap<String, Shape>,
+    pub tree: VecTree<String>,
+    pub shapes: HashMap<String, Shape>,
 }
 
 impl Scene {
@@ -52,6 +52,7 @@ impl Scene {
             .len();
         len
     }
+
     pub fn children(&self, index: Index) -> Vec<&String> {
         let children = self
             .tree
@@ -60,6 +61,7 @@ impl Scene {
             .collect::<Vec<&String>>();
         children
     }
+
     pub fn parent(&self, index: Index) -> Option<&String> {
         let children = self.tree.parent(index);
         match children {
@@ -85,7 +87,7 @@ impl Scene {
     pub fn normal(&self, shape_index: Index, world_point: Vector4<f32>) -> Vector4<f32> {
         let local_point = self.world_to_object(shape_index, world_point);
         let shape = self.get_shape_by_index(shape_index).unwrap();
-        let local_nomral = shape.local_normal(local_point);
+        let local_nomral = shape.local_normal(local_point, None);
         self.normal_to_world(shape_index, local_nomral)
     }
 
@@ -115,16 +117,22 @@ impl Scene {
     pub fn to_transformed_shapes(&self) -> Vec<Shape> {
         let tree = self.tree.clone();
         let root_node = tree.get_root_index().unwrap();
-        let shape = self.get_shape_by_index(root_node).unwrap();
+        let shape = self.get_shape_by_index(root_node);
         let mut all = vec![];
-        all.push(shape.clone());
+        match shape {
+            Some(x) => all.push(x.clone()),
+            None => {}
+        }
         self.fold_transformation(root_node, &mut all);
         all
     }
 
     pub fn fold_transformation(&self, node_index: Index, all: &mut Vec<Shape>) {
-        let node = self.get_shape_by_index(node_index).unwrap();
-        match node {
+        let node = self.get_shape_by_index(node_index);
+        if node.is_none() {
+            return;
+        }
+        match node.unwrap() {
             Shape::Group(x) => {
                 let group_transformation = self
                     .get_shape_by_index(node_index)
@@ -352,6 +360,7 @@ mod tests {
         let g2n = tree.insert(g2.id(), g1n);
         let sn = tree.insert(s.id(), g2n);
         let scene = Scene::from_shapes(tree, vec![g1.clone(), g2.clone(), s.clone()]);
+
         let n = scene.normal(sn, Vector4::point(1.7321, 1.1547, -5.5774));
         assert_relative_eq!(
             n,

@@ -10,6 +10,9 @@ pub struct Triangle {
     pub p1: Vector4<f32>, //top
     pub p2: Vector4<f32>, //left bottom
     pub p3: Vector4<f32>, //right bottom
+    pub n1: Vector4<f32>, //normal at top
+    pub n2: Vector4<f32>, //normal at left bottom
+    pub n3: Vector4<f32>, //normal at right bottom
     pub e1: Vector4<f32>, //p2 - p1 left
     pub e2: Vector4<f32>, //p3 - p1 right
     pub normal: Vector4<f32>,
@@ -29,10 +32,40 @@ impl Triangle {
         p2: Vector4<f32>,
         p3: Vector4<f32>,
     ) -> Triangle {
+        Triangle::new_with_n(
+            transformation,
+            matrial,
+            p1,
+            p2,
+            p3,
+            Vector4::vector(0., 0., 0.),
+            Vector4::vector(0., 0., 0.),
+            Vector4::vector(0., 0., 0.),
+        )
+    }
+    pub fn new_default() -> Triangle {
+        Triangle::new(
+            None,
+            None,
+            Vector4::point(0., 1., 0.),
+            Vector4::point(-1., 0., 0.),
+            Vector4::point(1., 0., 0.),
+        )
+    }
+    pub fn new_with_n(
+        transformation: Option<Matrix4<f32>>,
+        matrial: Option<Material>,
+        p1: Vector4<f32>,
+        p2: Vector4<f32>,
+        p3: Vector4<f32>,
+        n1: Vector4<f32>,
+        n2: Vector4<f32>,
+        n3: Vector4<f32>,
+    ) -> Triangle {
         let e1 = p2 - p1;
         let e2 = p3 - p2;
         Triangle {
-            id: Shape::generate_id(Some("cube")),
+            id: Shape::generate_id(Some("triangle")),
             transformation: match transformation {
                 Some(x) => x,
                 None => Matrix4::<f32>::identity(),
@@ -44,19 +77,13 @@ impl Triangle {
             p1,
             p2,
             p3,
+            n1,
+            n2,
+            n3,
             e1: p2 - p1,
             e2: p3 - p1,
             normal: e2.cross4(&e1).normalize(),
         }
-    }
-    pub fn new_default() -> Triangle {
-        Triangle::new(
-            None,
-            None,
-            Vector4::point(0., 1., 0.),
-            Vector4::point(-1., 0., 0.),
-            Vector4::point(1., 0., 0.),
-        )
     }
 }
 
@@ -86,9 +113,9 @@ mod tests {
         let p2 = Vector4::point(-1., 0., 0.);
         let p3 = Vector4::point(1., 0., 0.);
         let t = Shape::Triangle(Triangle::new(None, None, p1, p2, p3));
-        let n1 = t.local_normal(Vector4::point(0., 0.5, 0.));
-        let n2 = t.local_normal(Vector4::point(-0.5, 0.75, 0.));
-        let n3 = t.local_normal(Vector4::point(0.5, 0.25, 0.));
+        let n1 = t.local_normal(Vector4::point(0., 0.5, 0.), None);
+        let n2 = t.local_normal(Vector4::point(-0.5, 0.75, 0.), None);
+        let n3 = t.local_normal(Vector4::point(0.5, 0.25, 0.), None);
 
         assert_eq!(t.triangle().unwrap().normal, n1);
         assert_eq!(t.triangle().unwrap().normal, n2);

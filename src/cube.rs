@@ -136,7 +136,7 @@ mod tests {
             (Vector4::point(-1., -1., -1.), Vector4::vector(-1., 0., 0.)),
         ];
         for (point, normal) in test_set {
-            assert_eq!(cube.normal(point), normal);
+            assert_eq!(cube.normal(point, None), normal);
         }
     }
 }

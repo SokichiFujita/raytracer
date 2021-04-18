@@ -151,7 +151,7 @@ mod tests {
             (Vector4::point(-1., 1., 0.), Vector4::vector(-1., 0., 0.)),
         ] {
             let shape = Shape::Cylinder(Cylinder::new_default());
-            let n = shape.normal(point);
+            let n = shape.normal(point, None);
             assert_relative_eq!(n, normal);
         }
     }
@@ -203,7 +203,7 @@ mod tests {
         ] {
             let shape =
                 Shape::Cylinder(Cylinder::new(None, None, Some(1.0), Some(2.0), Some(true)));
-            assert_relative_eq!(shape.normal(point), normal);
+            assert_relative_eq!(shape.normal(point, None), normal);
         }
     }
 }

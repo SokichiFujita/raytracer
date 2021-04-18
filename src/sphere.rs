@@ -161,7 +161,7 @@ mod tests {
     fn normal_on_sphere_at_xaxis() {
         let sphere = Shape::Sphere(Sphere::new_default());
         let point = Vector4::point(1., 0., 0.);
-        let normal = sphere.normal(point);
+        let normal = sphere.normal(point, None);
         assert_eq!(normal, Vector4::vector(1., 0., 0.));
     }
 
@@ -170,7 +170,7 @@ mod tests {
     fn normal_on_sphere_at_yaxis() {
         let sphere = Shape::Sphere(Sphere::new_default());
         let point = Vector4::point(0., 1., 0.);
-        let normal = sphere.normal(point);
+        let normal = sphere.normal(point, None);
         assert_eq!(normal, Vector4::vector(0., 1., 0.));
     }
 
@@ -179,7 +179,7 @@ mod tests {
     fn normal_on_sphere_at_zaxis() {
         let sphere = Shape::Sphere(Sphere::new_default());
         let point = Vector4::point(0., 0., 1.);
-        let normal = sphere.normal(point);
+        let normal = sphere.normal(point, None);
         assert_eq!(normal, Vector4::vector(0., 0., 1.));
     }
 
@@ -192,7 +192,7 @@ mod tests {
             3.0_f32.sqrt() / 3.0,
             3.0_f32.sqrt() / 3.0,
         );
-        let normal = sphere.normal(point);
+        let normal = sphere.normal(point, None);
         assert_relative_eq!(
             normal,
             Vector4::vector(
@@ -212,7 +212,7 @@ mod tests {
             3.0_f32.sqrt() / 3.0,
             3.0_f32.sqrt() / 3.0,
         );
-        let normal = sphere.normal(point);
+        let normal = sphere.normal(point, None);
         assert_relative_eq!(normal, normal.normalize());
     }
 
@@ -227,7 +227,7 @@ mod tests {
         ));
 
         let point = Vector4::point(0., 1.70711, -0.70711);
-        let normal = sphere.normal(point);
+        let normal = sphere.normal(point, None);
         assert_relative_eq!(
             normal,
             Vector4::vector(0., 0.70711, -0.70711),
@@ -246,7 +246,7 @@ mod tests {
         ));
 
         let point = Vector4::point(0., 2.0_f32.sqrt() / 2.0, -2.0_f32.sqrt() / 2.0);
-        let normal = sphere.normal(point);
+        let normal = sphere.normal(point, None);
         assert_relative_eq!(
             normal,
             Vector4::vector(0., 0.97014, -0.24254),
